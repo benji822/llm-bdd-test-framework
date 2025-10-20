@@ -1,76 +1,96 @@
 # Pipeline Architecture
 
-The pipeline is split into four transformation stages plus a CI verification loop. Each stage is implemented as a TypeScript module under `tests/scripts/` with matching unit/integration tests in `tests/__tests__/`.
+This document describes how the LLM-powered BDD pipeline is wired together inside the `tests/` workspace. All production code for the pipeline lives under `tests/scripts/` with matching unit and integration tests in `tests/__tests__/`.
+
+## High-Level Flow
 
 ```
-Plain Text ──┐
-             │  spec:questions           ┌──────────────┐
-             ├─> Clarifications  ───────►│ generate LLm │
-             │                           └──────────────┘
-             │  spec:normalize           ┌──────────────┐
-             ├─> Normalized YAML ───────►│ normalize    │─┐
-Selector     │                           └──────────────┘ │
-Registry ────┼────────────────────────────────────────────┼─► spec:features
-             │  spec:features            ┌──────────────┐ │
-Step         ├─> Gherkin Features ──────►│ feature gen  │─┘
-Vocabulary   │                           └──────────────┘
-             │  spec:ci-verify           ┌──────────────┐
-             └─> CI Verification ───────►│ ci-verify    │
-                                         └──────────────┘
+Plain Text Spec
+   │  yarn spec:questions
+   ▼
+Clarification Markdown
+   │  yarn spec:normalize / spec:normalize:batch
+   ▼
+Schema-Validated YAML
+   │  yarn spec:validate-and-fix (optional gate)
+   ▼
+Gherkin Features
+   │  yarn spec:features
+   ▼
+Playwright Step Execution
+
+Auxiliary:
+  • yarn spec:collect-selectors → updates selector registry
+  • yarn spec:validate → coverage + selector drift checks
+  • yarn spec:ci-verify → CI bundle + deterministic reporting
 ```
 
-## Core Modules
+Every CLI command in `package.json` is a thin wrapper around a TypeScript module that can also be imported for programmatic use.
 
-| Module | Description | Key Dependencies |
-|--------|-------------|------------------|
-| `generate-questions.ts` | Produces clarification Q&A from plain-text specs. | LLM provider abstraction, prompt renderer. |
-| `normalize-yaml.ts` | Converts clarified specs into schema-validated YAML. | Zod schema, YAML sanitizer. |
-| `generate-features.ts` | Generates `.feature` files and enforces step coverage/linting. | `validate-coverage`, gherkin-lint. |
-| `collect-selectors.ts` | Harvests selectors with Playwright. | Playwright chromium runner. |
-| `validate-selectors.ts` | Ensures YAML selectors exist in the registry. | `SelectorRegistry` schema. |
-| `validate-coverage.ts` | Confirms every feature step matches vocabulary. | Step vocabulary JSON. |
-| `ci-verify.ts` | Deterministic validation pipeline for CI. | All above validators, secret scanning, artifact bundling. |
+## Stage Modules
 
-### Shared Utilities
+| Stage | Module | CLI entry point | Responsibility | Key dependencies |
+|-------|--------|-----------------|----------------|------------------|
+| Clarification | `generate-questions.ts` | `tests/scripts/cli-questions.ts` (`yarn spec:questions`) | Render prompt, call LLM provider, persist Q&A markdown. | `llm/`, `prompt-loader`, `logging`. |
+| Normalization | `normalize-yaml.ts` | `tests/scripts/cli-normalize.ts` (`yarn spec:normalize`, `yarn spec:normalize:batch`) | Convert spec + clarifications to normalized YAML, enforce schema, reuse cache when clarifications unchanged. | `llm/`, `utils/hash`, `utils/yaml-parser`, `types/yaml-spec`. |
+| Selector hygiene | `collect-selectors.ts` | `tests/scripts/cli-collect-selectors.ts` (`yarn spec:collect-selectors`) | Crawl running app with Playwright and refresh `tests/artifacts/selectors.json`. | Playwright Chromium adapter, `utils/file-operations`. |
+| Optional pre-flight | `validate-and-fix-selectors.ts` | `tests/scripts/cli-validate-and-fix.ts` (`yarn spec:validate-and-fix`) | Validate selectors referenced in YAML against the live app, emit rich report, optionally auto-fix. | Playwright, `types/yaml-spec`, `utils/logging`. |
+| Feature generation | `generate-features.ts` | `tests/scripts/cli-features.ts` (`yarn spec:features`) | Produce `.feature` files, enforce vocabulary coverage, lint output. | `validate-coverage`, `gherkin-lint`, `step-vocabulary.json`. |
+| Validation (headless) | `validate-selectors.ts`, `validate-coverage.ts` | `tests/scripts/cli-validate.ts` (`yarn spec:validate`) | Offline validation that compares YAML/features against selector registry and vocabulary. | `types/validation-report`, `artifacts/selectors.json`. |
+| CI verification | `ci-verify.ts` | `tests/scripts/cli-ci-verify.ts` (`yarn spec:ci-verify`) | Aggregate schema, lint, coverage, selector, and secret checks; package artifacts for CI. | `utils/secret-scanner`, `utils/logging`, `validate-*` modules. |
+| Benchmarks (optional) | `benchmarks.ts` | `yarn spec:benchmarks` | Measure throughput across stages to catch regressions. | `utils/benchmark-runner`. |
 
-- `llm/` – provider factory (`LLM_PROVIDER=codex|claude`) with strict timeout/error handling.
-- `utils/` – file I/O, logging, prompt rendering, sanitizers, YAML parsing.
-- `types/` – Zod-powered type definitions for specs, selectors, validation reports, etc.
+All CLI files live alongside their modules so the same code can be invoked within tests.
 
-## Control Flow
+## Supporting Layers
 
-1. **Authoring Loop (LLM required locally)**  
-   - QA produces specification → `spec:questions` seeds clarifications.  
-   - QA answers required questions.  
-   - `spec:normalize` rejects if mandatory answers missing.  
-   - `spec:features` ensures lint + vocabulary coverage, auto-repair fallback.
+- **LLM Provider Abstraction (`tests/scripts/llm/`)**  
+  Handles provider selection (`LLM_PROVIDER=codex|claude`), timeout enforcement, retries, and structured logging. Providers share a common interface so stages can swap models without code changes.
 
-2. **Selector Hygiene (No LLM)**  
-   - `spec:collect-selectors` updates `artifacts/selectors.json`.  
-   - `spec:validate` reports missing selectors and coverage gaps.
+- **Utilities (`tests/scripts/utils/`)**  
+  Shared building blocks for file I/O, hashing, YAML parsing, caching, concurrency, environment validation, and JSON logging. Modules are intentionally small so they can be reused across stages and tests.
 
-3. **CI Verification (No LLM)**  
-   - `spec:ci-verify` validates YAML schemas, lint, coverage, selector consistency.  
-   - Secret scanning enforces SC-010 (no leaked credentials).  
-   - Exit codes map to failure class (schema=2, lint=3, coverage=4, selectors=5, secrets=6).  
-   - Artifacts packaged under `artifacts/ci-bundle/` and uploaded by CI workflow (`bdd-pipeline-ci.yml`).
+- **Type Schemas (`tests/scripts/types/`)**  
+  Zod schemas define contract shapes for normalized YAML, selector registries, CI reports, and validation issues. Code validates all external inputs (LLM responses, file reads) before use.
 
-## Testing Strategy
+- **Testing**  
+  Unit tests cover each module (e.g., `normalize-yaml.test.ts`, `ci-verify.test.ts`). Integration suites under `tests/__tests__/integration/` assert multi-stage flows such as “normalize → generate features → validate coverage”. Tests run with `node:test` via `tsx --test`.
 
-- **Unit Tests** – one per core script (US1–US4) covering happy path & failure modes.
-- **Integration Tests** – multi-step flows verifying cross-module behavior (e.g., selectors collection + validation).
-- **Node Test Runner** – uses built-in `node:test` with `tsx --test`.
+## Artifacts and Directories
 
-## Extensibility Guidelines
+| Path | Purpose |
+|------|---------|
+| `tests/qa-specs/` | Plain-text specifications authored by QA. |
+| `tests/clarifications/` | Markdown Q&A emitted by `spec:questions`. |
+| `tests/normalized/` | Source of truth YAML documents. |
+| `tests/features/` | Generated `.feature` files consumed by Playwright BDD. |
+| `tests/artifacts/selectors.json` | Selector registry refreshed by `spec:collect-selectors`. |
+| `tests/artifacts/validation-report.json` | Output from selector validation. |
+| `tests/artifacts/ci-report.json` & `tests/artifacts/ci-bundle/` | Deterministic reports produced during CI verification. |
+| `tests/artifacts/step-vocabulary.json` | Approved step phrases used by coverage validator and feature generator. |
 
-- Prefer adding new Zod schemas/types under `tests/scripts/types`.
-- Expose new scripts via CLI wrappers + yarn scripts for consistent invocation.
-- Accompany each script change with unit test updates; add integration coverage when touching multiple modules.
-- Keep prompts versioned; breaking changes require bumping prompt metadata.
+Artifacts are committed to Git for auditability and so CI can diff generated outputs.
 
-## Operational Considerations
+## Execution Paths
 
-- **LLM Credentials**: stored in `.env.local` locally, CI loads via secrets. No LLM usage during CI.  
-- **Selectors**: nightly `daily-selector-scan.yml` ensures registry freshness.  
-- **Artifacts**: CI runs retain bundles for 30 days (FR-019a); local runs can inspect the same bundle for debugging.  
-- **Logging**: all scripts emit structured JSON to stdout, making them CI-friendly and easily searchable.
+1. **Authoring loop (LLM required locally)**  
+   Run `spec:questions`, answer clarifications, call `spec:normalize`, optionally gate with `spec:validate-and-fix`, then generate features via `spec:features`. At each step the CLI records structured logs to stdout for observability.
+
+2. **Validation loop (LLM-free)**  
+   `spec:collect-selectors` refreshes the registry from a running application. `spec:validate` provides fast feedback on selector drift or vocabulary gaps without invoking the LLM.
+
+3. **CI verification (deterministic)**  
+   Pipelines call `spec:ci-verify`, which applies schema validation, gherkin-lint, coverage checks, selector reconciliation, and secret scanning. Exit codes are stable: schema (2), lint (3), coverage (4), selectors (5), secrets (6), timeout (7). The run bundles inputs/outputs for later inspection.
+
+## Extending the Pipeline
+
+- Add new data contracts in `tests/scripts/types/` and validate all external inputs with Zod before use.
+- Keep prompts versioned inside `tests/prompts/`; bump prompt metadata whenever the format changes.
+- When introducing new CLI behavior, expose it through a top-level script in `package.json` so both humans and CI can call it consistently.
+- Pair new stages with unit tests and, when they touch multiple files, add integration coverage.
+
+## Operational Notes
+
+- Configure environment variables in `.env.local`; `tests/scripts/utils/load-env` loads them automatically for every CLI entry point.
+- Selector validation and collection commands assume the target app is reachable at `E2E_BASE_URL`. Provide `--base-url` overrides when needed.
+- Logs are emitted as structured JSON lines so they can be shipped to observability tooling or grepped locally.
