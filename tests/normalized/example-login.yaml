@@ -1,0 +1,94 @@
+feature: Customer login
+description: Users authenticate with email and password to reach the dashboard.
+scenarios:
+  - name: Authenticate With Valid Credentials
+    steps:
+      - type: given
+        text: I am on the login page
+      - type: when
+        text: I enter email as <E2E_USER_EMAIL>
+      - type: and
+        text: I enter password as <E2E_USER_PASSWORD>
+      - type: and
+        text: I click the submit button
+      - type: then
+        text: I should see text Welcome back
+    selectors:
+      login-page: 'TODO: add navigation assertion for /login'
+      email-input: 'TODO: add selector for email input'
+      password-input: 'TODO: add selector for password input'
+      submit-button: 'TODO: add selector for submit button'
+      dashboard-heading: 'TODO: add selector for dashboard heading'
+    testData:
+      email: <E2E_USER_EMAIL>
+      password: <E2E_USER_PASSWORD>
+  - name: Retry After Invalid Password
+    steps:
+      - type: given
+        text: I am on the login page
+      - type: when
+        text: I enter email as <E2E_USER_EMAIL>
+      - type: and
+        text: I enter password as <INVALID_PASSWORD>
+      - type: and
+        text: I click the submit button
+      - type: then
+        text: I should see text Invalid credentials provided
+      - type: and
+        text: I enter password as <E2E_USER_PASSWORD>
+      - type: and
+        text: I click the submit button
+      - type: then
+        text: I should see text Welcome back
+    selectors:
+      login-page: 'TODO: add navigation assertion for /login'
+      email-input: 'TODO: add selector for email input'
+      password-input: 'TODO: add selector for password input'
+      submit-button: 'TODO: add selector for submit button'
+      error-message: 'TODO: add selector for inline error message'
+      dashboard-heading: 'TODO: add selector for dashboard heading'
+    testData:
+      email: <E2E_USER_EMAIL>
+      invalidPassword: <INVALID_PASSWORD>
+      password: <E2E_USER_PASSWORD>
+  - name: Reject Unknown Email
+    steps:
+      - type: given
+        text: I am on the login page
+      - type: when
+        text: I enter email as <UNKNOWN_EMAIL>
+      - type: and
+        text: I enter password as <E2E_USER_PASSWORD>
+      - type: and
+        text: I click the submit button
+      - type: then
+        text: I should see text Invalid credentials provided
+    selectors:
+      login-page: 'TODO: add navigation assertion for /login'
+      email-input: 'TODO: add selector for email input'
+      password-input: 'TODO: add selector for password input'
+      submit-button: 'TODO: add selector for submit button'
+      error-message: 'TODO: add selector for inline error message'
+    testData:
+      email: <UNKNOWN_EMAIL>
+      password: <E2E_USER_PASSWORD>
+  - name: Block Empty Submission
+    steps:
+      - type: given
+        text: I am on the login page
+      - type: when
+        text: I click the submit button
+      - type: then
+        text: I should see text Please fill out this field.
+    selectors:
+      login-page: 'TODO: add navigation assertion for /login'
+      submit-button: 'TODO: add selector for submit button'
+      required-field-message: 'TODO: add selector for required field validation prompt'
+    testData:
+      requiredMessage: Please fill out this field.
+metadata:
+  specId: b9aa49ee-bcc2-4af6-be87-50f4d1c0d585
+  generatedAt: '2025-10-19T15:00:00.000Z'
+  llmProvider: codex
+  llmModel: gpt-5-codex
+  clarificationsHash: 50ef99cbe612aeb6e680f2546d2ca916e7c326196549916c5bbcefcd39a8753f

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-10-18T10:18:56.381Z",
+  "totalFiles": 0,
+  "passed": 0,
+  "failed": 0,
+  "issues": [],
+  "summary": {
+    "schemaErrors": 0,
+    "lintErrors": 0,
+    "selectorMismatches": 0,
+    "coverageGaps": 0,
+    "secretFindings": 0
+  }
+}

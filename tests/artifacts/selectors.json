@@ -1,0 +1,876 @@
+{
+  "version": "2025-10-18",
+  "lastScanned": "2025-10-18T13:10:58.109Z",
+  "selectors": {
+    "email-input": {
+      "id": "email-input",
+      "type": "testid",
+      "selector": "[data-testid='email-input']",
+      "priority": 3,
+      "lastSeen": "2025-10-18T09:21:32.142447+00:00",
+      "stability": "high",
+      "page": "/login",
+      "accessible": false
+    },
+    "password-input": {
+      "id": "password-input",
+      "type": "testid",
+      "selector": "[data-testid='password-input']",
+      "priority": 3,
+      "lastSeen": "2025-10-18T09:21:32.142447+00:00",
+      "stability": "high",
+      "page": "/login",
+      "accessible": false
+    },
+    "submit-button": {
+      "id": "submit-button",
+      "type": "label",
+      "selector": "button[aria-label='Sign in']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T09:21:32.142447+00:00",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "dashboard-heading": {
+      "id": "dashboard-heading",
+      "type": "role",
+      "selector": "h1[aria-label='Welcome back']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T09:21:32.142447+00:00",
+      "stability": "high",
+      "page": "/dashboard",
+      "accessible": true
+    },
+    "error-banner": {
+      "id": "error-banner",
+      "type": "role",
+      "selector": "[role='alert'][data-testid='login-error']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T09:21:32.142447+00:00",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "radiogroup-queriesmutations": {
+      "id": "radiogroup-queriesmutations",
+      "type": "role",
+      "selector": "[role='radiogroup'][aria-label='QueriesMutations']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-queries": {
+      "id": "group-queries",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Queries']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-mutations": {
+      "id": "group-mutations",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Mutations']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-welcome-offerget-an-extra-100-in-coinsjoin-now-claim-welcome-offerget-20-000-lucky-coins-for-free-claim-now-level-systemthe-more-you-play-the-more-rewards-you-get-learn-morehow-it-works-find-out-more-learn-moreprevious-slidenext-slide": {
+      "id": "region-welcome-offerget-an-extra-100-in-coinsjoin-now-claim-welcome-offerget-20-000-lucky-coins-for-free-claim-now-level-systemthe-more-you-play-the-more-rewards-you-get-learn-morehow-it-works-find-out-more-learn-moreprevious-slidenext-slide",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Welcome OfferGet an Extra 100% in CoinsJoin Now!Claim Welcome OfferGet 20,000 Lucky Coins for FREE!Claim Now!Level SystemThe more you play, the more rewards you get!Learn MoreHow it works?Find out more!Learn MorePrevious slideNext slide']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-welcome-offerget-an-extra-100-in-coinsjoin-now": {
+      "id": "group-welcome-offerget-an-extra-100-in-coinsjoin-now",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Welcome OfferGet an Extra 100% in CoinsJoin Now!']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-claim-welcome-offerget-20-000-lucky-coins-for-free-claim-now": {
+      "id": "group-claim-welcome-offerget-20-000-lucky-coins-for-free-claim-now",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Claim Welcome OfferGet 20,000 Lucky Coins for FREE!Claim Now!']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-level-systemthe-more-you-play-the-more-rewards-you-get-learn-more": {
+      "id": "group-level-systemthe-more-you-play-the-more-rewards-you-get-learn-more",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Level SystemThe more you play, the more rewards you get!Learn More']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-how-it-works-find-out-more-learn-more": {
+      "id": "group-how-it-works-find-out-more-learn-more",
+      "type": "role",
+      "selector": "[role='group'][aria-label='How it works?Find out more!Learn More']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-previous-slideexploregame-studiosgame-typesexploregame-studiosgame-typesnext-slide": {
+      "id": "region-previous-slideexploregame-studiosgame-typesexploregame-studiosgame-typesnext-slide",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Previous slideExploreGame StudiosGame typesExploreGame StudiosGame typesNext slide']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-explore": {
+      "id": "group-explore",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Explore']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-game-studios": {
+      "id": "group-game-studios",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Game Studios']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-game-types": {
+      "id": "group-game-types",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Game types']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-new-games-17-view-allview-allprevious-slidenext-slidebarbarian-furyapollo-pays64-gold-coins-hold-and-wingangsterzacceptancetestgift-rushbook-of-catsalchemist-bonanzamice-magic-wonder-spinaztec-clustersbone-bonanzagemzaalien-fruitswild-cash-x9990lady-wolf-moon-megawaysplinkobonanza-billion": {
+      "id": "region-new-games-17-view-allview-allprevious-slidenext-slidebarbarian-furyapollo-pays64-gold-coins-hold-and-wingangsterzacceptancetestgift-rushbook-of-catsalchemist-bonanzamice-magic-wonder-spinaztec-clustersbone-bonanzagemzaalien-fruitswild-cash-x9990lady-wolf-moon-megawaysplinkobonanza-billion",
+      "type": "role",
+      "selector": "[role='region'][aria-label='New games (17)View allView allPrevious slideNext slideBarbarian FuryApollo Pays64 Gold Coins Hold and WinGangsterzacceptancetestGift RushBook Of CatsAlchemist BonanzaMice & Magic Wonder SpinAztec ClustersBone BonanzaGemzaAlien FruitsWild Cash x9990Lady Wolf Moon MegawaysPlinkoBonanza' Billion']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-barbarian-fury": {
+      "id": "group-barbarian-fury",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Barbarian Fury']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-apollo-pays": {
+      "id": "group-apollo-pays",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Apollo Pays']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-64-gold-coins-hold-and-win": {
+      "id": "group-64-gold-coins-hold-and-win",
+      "type": "role",
+      "selector": "[role='group'][aria-label='64 Gold Coins Hold and Win']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-gangsterz": {
+      "id": "group-gangsterz",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Gangsterz']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-acceptancetest": {
+      "id": "group-acceptancetest",
+      "type": "role",
+      "selector": "[role='group'][aria-label='acceptancetest']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-gift-rush": {
+      "id": "group-gift-rush",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Gift Rush']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-book-of-cats": {
+      "id": "group-book-of-cats",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Book Of Cats']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-alchemist-bonanza": {
+      "id": "group-alchemist-bonanza",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Alchemist Bonanza']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-mice-magic-wonder-spin": {
+      "id": "group-mice-magic-wonder-spin",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Mice & Magic Wonder Spin']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-aztec-clusters": {
+      "id": "group-aztec-clusters",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Aztec Clusters']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-bone-bonanza": {
+      "id": "group-bone-bonanza",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Bone Bonanza']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-gemza": {
+      "id": "group-gemza",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Gemza']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-alien-fruits": {
+      "id": "group-alien-fruits",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Alien Fruits']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-wild-cash-x9990": {
+      "id": "group-wild-cash-x9990",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Wild Cash x9990']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-lady-wolf-moon-megaways": {
+      "id": "group-lady-wolf-moon-megaways",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Lady Wolf Moon Megaways']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-plinko": {
+      "id": "group-plinko",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Plinko']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-bonanza-billion": {
+      "id": "group-bonanza-billion",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Bonanza' Billion']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-pragmatic-14-view-allview-allprevious-slidenext-slideacceptancetestbone-bonanzagangsterzaztec-clusterslady-wolf-moon-megawaysplinkowild-cash-x9990gemzaalchemist-bonanzaalien-fruitsmice-magic-wonder-spingift-rushbook-of-catsbonanza-billion": {
+      "id": "region-pragmatic-14-view-allview-allprevious-slidenext-slideacceptancetestbone-bonanzagangsterzaztec-clusterslady-wolf-moon-megawaysplinkowild-cash-x9990gemzaalchemist-bonanzaalien-fruitsmice-magic-wonder-spingift-rushbook-of-catsbonanza-billion",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Pragmatic (14)View allView allPrevious slideNext slideacceptancetestBone BonanzaGangsterzAztec ClustersLady Wolf Moon MegawaysPlinkoWild Cash x9990GemzaAlchemist BonanzaAlien FruitsMice & Magic Wonder SpinGift RushBook Of CatsBonanza' Billion']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-popular-13-view-allview-allprevious-slidenext-slidegift-rushbonanza-billiongates-of-olympus-1000aztec-clustersbone-bonanzawild-cash-x9990gemzalady-wolf-moon-megawaysalien-fruitsgangsterzplinkoalchemist-bonanzabeef-lightning": {
+      "id": "region-popular-13-view-allview-allprevious-slidenext-slidegift-rushbonanza-billiongates-of-olympus-1000aztec-clustersbone-bonanzawild-cash-x9990gemzalady-wolf-moon-megawaysalien-fruitsgangsterzplinkoalchemist-bonanzabeef-lightning",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Popular (13)View allView allPrevious slideNext slideGift RushBonanza' BillionGates of Olympus 1000Aztec ClustersBone BonanzaWild Cash x9990GemzaLady Wolf Moon MegawaysAlien FruitsGangsterzPlinkoAlchemist BonanzaBeef Lightning']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-gates-of-olympus-1000": {
+      "id": "group-gates-of-olympus-1000",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Gates of Olympus 1000']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-beef-lightning": {
+      "id": "group-beef-lightning",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Beef Lightning']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-always-free-to-play-win-no-purchase-necessary-and-free-to-play-at-cazino-learn-moreclaim-welcome-offerget-20-000-lucky-coins-for-free-claim-now": {
+      "id": "region-always-free-to-play-win-no-purchase-necessary-and-free-to-play-at-cazino-learn-moreclaim-welcome-offerget-20-000-lucky-coins-for-free-claim-now",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Always Free to Play & Win!No purchase necessary and free to play at CAZINO!Learn MoreClaim Welcome OfferGet 20,000 Lucky Coins for FREE!Claim Now!']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-always-free-to-play-win-no-purchase-necessary-and-free-to-play-at-cazino-learn-more": {
+      "id": "group-always-free-to-play-win-no-purchase-necessary-and-free-to-play-at-cazino-learn-more",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Always Free to Play & Win!No purchase necessary and free to play at CAZINO!Learn More']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-hold-and-wins-13-view-allview-allprevious-slidenext-slideplinkoalien-fruitsalchemist-bonanzamice-magic-wonder-spinbone-bonanzagemzagangsterzlady-wolf-moon-megawaysbook-of-catscrystal-crushersgift-rushaztec-clustersbonanza-billion": {
+      "id": "region-hold-and-wins-13-view-allview-allprevious-slidenext-slideplinkoalien-fruitsalchemist-bonanzamice-magic-wonder-spinbone-bonanzagemzagangsterzlady-wolf-moon-megawaysbook-of-catscrystal-crushersgift-rushaztec-clustersbonanza-billion",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Hold and wins (13)View allView allPrevious slideNext slidePlinkoAlien FruitsAlchemist BonanzaMice & Magic Wonder SpinBone BonanzaGemzaGangsterzLady Wolf Moon MegawaysBook Of CatsCrystal CrushersGift RushAztec ClustersBonanza' Billion']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "group-crystal-crushers": {
+      "id": "group-crystal-crushers",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Crystal Crushers']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-notifications-f8": {
+      "id": "region-notifications-f8",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Notifications (F8)']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "tanstack-query-devtools": {
+      "id": "tanstack-query-devtools",
+      "type": "label",
+      "selector": "[aria-label='Tanstack query devtools']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "close-tanstack-query-devtools": {
+      "id": "close-tanstack-query-devtools",
+      "type": "label",
+      "selector": "[aria-label='Close tanstack query devtools']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "filter-queries-by-query-key": {
+      "id": "filter-queries-by-query-key",
+      "type": "label",
+      "selector": "[aria-label='Filter queries by query key']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "sort-order-ascending": {
+      "id": "sort-order-ascending",
+      "type": "label",
+      "selector": "[aria-label='Sort order ascending']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "clear-query-cache": {
+      "id": "clear-query-cache",
+      "type": "label",
+      "selector": "[aria-label='Clear query cache']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "mock-offline-behavior": {
+      "id": "mock-offline-behavior",
+      "type": "label",
+      "selector": "[aria-label='Mock offline behavior']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "open-in-picture-in-picture-mode": {
+      "id": "open-in-picture-in-picture-mode",
+      "type": "label",
+      "selector": "[aria-label='Open in picture-in-picture mode']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetcategoryquery-6051d423-ec9f-4363-82a0-1f156d917b3f": {
+      "id": "query-key-usegetcategoryquery-6051d423-ec9f-4363-82a0-1f156d917b3f",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetCategoryQuery\",\"6051d423-ec9f-4363-82a0-1f156d917b3f\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetcategoryquery-075513d9-8918-49c2-ab60-60844386fe26": {
+      "id": "query-key-usegetcategoryquery-075513d9-8918-49c2-ab60-60844386fe26",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetCategoryQuery\",\"075513d9-8918-49c2-ab60-60844386fe26\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetcategoryquery-bdfff4bf-bd6c-4bfb-9938-a3db455c2336": {
+      "id": "query-key-usegetcategoryquery-bdfff4bf-bd6c-4bfb-9938-a3db455c2336",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetCategoryQuery\",\"bdfff4bf-bd6c-4bfb-9938-a3db455c2336\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-category-count-6051d423-ec9f-4363-82a0-1f156d917b3f": {
+      "id": "query-key-category-count-6051d423-ec9f-4363-82a0-1f156d917b3f",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"category-count\",\"6051d423-ec9f-4363-82a0-1f156d917b3f\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-category-count-075513d9-8918-49c2-ab60-60844386fe26": {
+      "id": "query-key-category-count-075513d9-8918-49c2-ab60-60844386fe26",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"category-count\",\"075513d9-8918-49c2-ab60-60844386fe26\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetcategoryquery-b09d8a5c-691b-4be9-b185-88583496e998": {
+      "id": "query-key-usegetcategoryquery-b09d8a5c-691b-4be9-b185-88583496e998",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetCategoryQuery\",\"b09d8a5c-691b-4be9-b185-88583496e998\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-category-count-bdfff4bf-bd6c-4bfb-9938-a3db455c2336": {
+      "id": "query-key-category-count-bdfff4bf-bd6c-4bfb-9938-a3db455c2336",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"category-count\",\"bdfff4bf-bd6c-4bfb-9938-a3db455c2336\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-category-count-b09d8a5c-691b-4be9-b185-88583496e998": {
+      "id": "query-key-category-count-b09d8a5c-691b-4be9-b185-88583496e998",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"category-count\",\"b09d8a5c-691b-4be9-b185-88583496e998\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-is-mobile": {
+      "id": "query-key-is-mobile",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"is-mobile\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetgamesbygamename": {
+      "id": "query-key-usegetgamesbygamename",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetGamesByGameName\",\"\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-is-mobile-or-tablet": {
+      "id": "query-key-is-mobile-or-tablet",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"is-mobile-or-tablet\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetlobbylistquery-en-us": {
+      "id": "query-key-usegetlobbylistquery-en-us",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetLobbyListQuery\",\"en\",\"US\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetseodescriptionquery-us-en": {
+      "id": "query-key-usegetseodescriptionquery-us-en",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetSeoDescriptionQuery\",\"US/\",\"en\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegethomepagequery-en-us": {
+      "id": "query-key-usegethomepagequery-en-us",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetHomepageQuery\",\"en\",\"US\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetmarketquery-en-us": {
+      "id": "query-key-usegetmarketquery-en-us",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetMarketQuery\",\"en\",\"US\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-useoffersquery": {
+      "id": "query-key-useoffersquery",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useOffersQuery\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-deposittransactions-skip-0-statuses-200-201-take-2": {
+      "id": "query-key-deposittransactions-skip-0-statuses-200-201-take-2",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"DepositTransactions\",{\"skip\":0,\"statuses\":[200,201],\"take\":2}]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-walletbalance": {
+      "id": "query-key-walletbalance",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"WalletBalance\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-deposittransactions-skip-0-take-1": {
+      "id": "query-key-deposittransactions-skip-0-take-1",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"DepositTransactions\",{\"skip\":0,\"take\":1}]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-accountdetails": {
+      "id": "query-key-accountdetails",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"AccountDetails\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-playerkyc": {
+      "id": "query-key-playerkyc",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"PlayerKyc\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-playerdetails": {
+      "id": "query-key-playerdetails",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"PlayerDetails\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetcategoryquery-8f18394c-1882-49e7-b64d-5896870c2c4e": {
+      "id": "query-key-usegetcategoryquery-8f18394c-1882-49e7-b64d-5896870c2c4e",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetCategoryQuery\",\"8f18394c-1882-49e7-b64d-5896870c2c4e\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "query-key-usegetcategoryquery-c25fa3df-b2e1-4da9-9608-ccd2a599cc3c": {
+      "id": "query-key-usegetcategoryquery-c25fa3df-b2e1-4da9-9608-ccd2a599cc3c",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetCategoryQuery\",\"c25fa3df-b2e1-4da9-9608-ccd2a599cc3c\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "notifications-f8": {
+      "id": "notifications-f8",
+      "type": "label",
+      "selector": "[aria-label='Notifications (F8)']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:30.158Z",
+      "stability": "medium",
+      "page": "/",
+      "accessible": true
+    },
+    "region-pragmatic-14-view-allview-allprevious-slidenext-slideacceptancetestbone-bonanzagangsterzaztec-clusterslady-wolf-moon-megawaysplinkowild-cash-x9990gemzaalchemist-bonanzaalien-fruits": {
+      "id": "region-pragmatic-14-view-allview-allprevious-slidenext-slideacceptancetestbone-bonanzagangsterzaztec-clusterslady-wolf-moon-megawaysplinkowild-cash-x9990gemzaalchemist-bonanzaalien-fruits",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Pragmatic (14)View allView allPrevious slideNext slideacceptancetestBone BonanzaGangsterzAztec ClustersLady Wolf Moon MegawaysPlinkoWild Cash x9990GemzaAlchemist BonanzaAlien Fruits']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "region-popular-13-view-allview-allprevious-slidenext-slidegift-rushbonanza-billiongates-of-olympus-1000aztec-clustersbone-bonanzawild-cash-x9990gemzalady-wolf-moon-megawaysalien-fruitsgangsterz": {
+      "id": "region-popular-13-view-allview-allprevious-slidenext-slidegift-rushbonanza-billiongates-of-olympus-1000aztec-clustersbone-bonanzawild-cash-x9990gemzalady-wolf-moon-megawaysalien-fruitsgangsterz",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Popular (13)View allView allPrevious slideNext slideGift RushBonanza' BillionGates of Olympus 1000Aztec ClustersBone BonanzaWild Cash x9990GemzaLady Wolf Moon MegawaysAlien FruitsGangsterz']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "region-megaways-14-view-allview-allprevious-slidenext-slidealchemist-bonanzaalien-fruitsmice-magic-wonder-spinbone-bonanzagangsterzbook-of-catswild-cash-x9990plinkobonanza-billioncrystal-crushers": {
+      "id": "region-megaways-14-view-allview-allprevious-slidenext-slidealchemist-bonanzaalien-fruitsmice-magic-wonder-spinbone-bonanzagangsterzbook-of-catswild-cash-x9990plinkobonanza-billioncrystal-crushers",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Megaways (14)View allView allPrevious slideNext slideAlchemist BonanzaAlien FruitsMice & Magic Wonder SpinBone BonanzaGangsterzBook Of CatsWild Cash x9990PlinkoBonanza' BillionCrystal Crushers']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "region-explore-9-view-allview-allprevious-slidenext-slide10001-nightsdragons-luckgangsterzgemzalightning-roulettebeef-lightningacceptancetestbone-bonanzamice-magic-wonder-spin": {
+      "id": "region-explore-9-view-allview-allprevious-slidenext-slide10001-nightsdragons-luckgangsterzgemzalightning-roulettebeef-lightningacceptancetestbone-bonanzamice-magic-wonder-spin",
+      "type": "role",
+      "selector": "[role='region'][aria-label='Explore (9)View allView allPrevious slideNext slide10001 NightsDragons LuckGangsterzGemzaLightning RouletteBeef LightningacceptancetestBone BonanzaMice & Magic Wonder Spin']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "group-10001-nights": {
+      "id": "group-10001-nights",
+      "type": "role",
+      "selector": "[role='group'][aria-label='10001 Nights']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "group-dragons-luck": {
+      "id": "group-dragons-luck",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Dragons Luck']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "group-lightning-roulette": {
+      "id": "group-lightning-roulette",
+      "type": "role",
+      "selector": "[role='group'][aria-label='Lightning Roulette']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "alertdialog-login-to-your-accountemail-addresspasswordforgot-your-password-log-indon-t-have-an-account-sign-upor-continue-with": {
+      "id": "alertdialog-login-to-your-accountemail-addresspasswordforgot-your-password-log-indon-t-have-an-account-sign-upor-continue-with",
+      "type": "role",
+      "selector": "[role='alertdialog'][aria-label='Login to your accountEmail addressPasswordForgot your password?LOG INDon't have an account?Sign upor continue with']",
+      "priority": 1,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "query-key-category-count-8f18394c-1882-49e7-b64d-5896870c2c4e": {
+      "id": "query-key-category-count-8f18394c-1882-49e7-b64d-5896870c2c4e",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"category-count\",\"8f18394c-1882-49e7-b64d-5896870c2c4e\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "query-key-category-count-c25fa3df-b2e1-4da9-9608-ccd2a599cc3c": {
+      "id": "query-key-category-count-c25fa3df-b2e1-4da9-9608-ccd2a599cc3c",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"category-count\",\"c25fa3df-b2e1-4da9-9608-ccd2a599cc3c\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    },
+    "query-key-usegetseodescriptionquery-us-login-en": {
+      "id": "query-key-usegetseodescriptionquery-us-login-en",
+      "type": "label",
+      "selector": "[aria-label='Query key [\"useGetSeoDescriptionQuery\",\"US/login\",\"en\"]']",
+      "priority": 2,
+      "lastSeen": "2025-10-18T13:10:58.109Z",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": true
+    }
+  }
+}

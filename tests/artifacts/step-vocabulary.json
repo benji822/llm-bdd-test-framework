@@ -1,0 +1,74 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-18T09:21:26.401405+00:00",
+  "definitions": [
+    {
+      "pattern": "I am on the {page} page",
+      "domain": "navigation",
+      "file": "tests/steps/navigation.steps.ts",
+      "parameters": [
+        {
+          "name": "page",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I am on the login page",
+        "I am on the dashboard page"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I enter {field} as {value}",
+      "domain": "interaction",
+      "file": "tests/steps/interaction.steps.ts",
+      "parameters": [
+        {
+          "name": "field",
+          "type": "string"
+        },
+        {
+          "name": "value",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I enter email as \"test@example.com\"",
+        "I enter password as \"Secret123!\""
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I click the {element} button",
+      "domain": "interaction",
+      "file": "tests/steps/interaction.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I click the submit button",
+        "I click the login button"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I should see text {text}",
+      "domain": "assertion",
+      "file": "tests/steps/assertion.steps.ts",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I should see text \"Welcome back\"",
+        "I should see text \"Invalid credentials\""
+      ],
+      "version": "1.0.0"
+    }
+  ]
+}

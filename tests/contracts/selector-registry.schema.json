@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cazino-frontend.com/schemas/selector-registry.schema.json",
+  "title": "Selector Registry",
+  "description": "Collection of available UI selectors from the application",
+  "type": "object",
+  "required": ["version", "lastScanned", "selectors"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "format": "date",
+      "description": "Registry version (YYYY-MM-DD format)"
+    },
+    "lastScanned": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the application was last scanned"
+    },
+    "selectors": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z0-9-]+$": {
+          "$ref": "#/definitions/selector"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "selector": {
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "selector",
+        "priority",
+        "lastSeen",
+        "stability",
+        "page",
+        "accessible"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Unique kebab-case identifier"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["role", "label", "testid", "css"],
+          "description": "Selector type determines priority"
+        },
+        "selector": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Playwright locator string"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "description": "1=role (highest), 2=label, 3=testid, 4=css (lowest)"
+        },
+        "lastSeen": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When selector was last found in application"
+        },
+        "stability": {
+          "type": "string",
+          "enum": ["high", "medium", "low"],
+          "description": "Calculated from change frequency over scans"
+        },
+        "page": {
+          "type": "string",
+          "description": "Page/route where selector is found"
+        },
+        "accessible": {
+          "type": "boolean",
+          "description": "Whether selector is accessibility-friendly (role/label)"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "version": "2025-10-18",
+      "lastScanned": "2025-10-18T06:00:00Z",
+      "selectors": {
+        "login-button": {
+          "id": "login-button",
+          "type": "role",
+          "selector": "button[aria-label='Login']",
+          "priority": 1,
+          "lastSeen": "2025-10-18T06:00:00Z",
+          "stability": "high",
+          "page": "/login",
+          "accessible": true
+        },
+        "email-input": {
+          "id": "email-input",
+          "type": "testid",
+          "selector": "input[data-testid='email']",
+          "priority": 3,
+          "lastSeen": "2025-10-18T06:00:00Z",
+          "stability": "high",
+          "page": "/login",
+          "accessible": false
+        }
+      }
+    }
+  ]
+}

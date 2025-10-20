@@ -1,0 +1,329 @@
+{
+  "version": 1,
+  "entries": {
+    "18fdfc942e2e07f2334b337a4282d50bcb2e15e3645f7dbfcdbc5a6f50456d8c": {
+      "completion": "Feature: Login flows\n  Ensures credential login behaves as expected\n\n  @auth\n  Scenario: Successful credential login\n    Given I am on the login page\n    When I enter email as \"user@example.com\"\n    And I enter password as \"Secret1!\"\n    Then I should see text \"Dashboard\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "85b4e8d3b4bfbc6b92de1b32d2c128956b99b2ac7b8b9351089c1d09bbc4e20b": {
+      "completion": "Feature: Logout\n  Scenario: Basic logout\n    Given I am on the dashboard page\n    When I press the logout icon\n    Then I should see text \"Signed out\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "codex-typescript",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "c988b1855629e015e2f3678fef4003c096ecc1056fe340f1c8000f0ab365616c": {
+      "completion": "feature: Profile update\nscenarios:\n  - name: Update profile with required fields\n    steps:\n      - type: given\n        text: I am on the profile page\n      - type: when\n        text: I enter display name as \"Taylor\"\n        selector: display-name-input\n      - type: when\n        text: I select language as \"English\"\n        selector: language-select\n      - type: then\n        text: I should see text \"Profile updated\"\n        selector: confirmation-banner\n    selectors:\n      display-name-input: \"input[name='displayName']\"\n      language-select: \"select[name='language']\"\n      confirmation-banner: \"div[role='status']\"\nmetadata:\n  specId: \"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"\n  generatedAt: \"2025-10-18T10:30:00Z\"\n  llmProvider: \"codex\"\n  llmModel: \"stub-model\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 512,
+        "responseTime": 1234
+      }
+    },
+    "c3b123f880b3759877a0061ce09babaf00571d62f7df20691b4fb035105f4cf0": {
+      "completion": "this: is: not: valid: yaml",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub",
+        "tokensUsed": 10,
+        "responseTime": 10
+      }
+    },
+    "80e3f81d1d2258579487db7f429560acc12ce651f6ee1c77366643fcfc5c47ef": {
+      "completion": "# Clarifications: login-spec\n\n## Question 1\n\n**Source**: line 1\n**Q**: Do we allow social login providers?\n**Why it matters**: Determines authentication coverage\n**A**: _[Pending answer]_\n**Required**: Yes\n",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 100,
+        "responseTime": 200
+      }
+    },
+    "6d82d4b4079a2057104cd30570dcef734842c7213bebbdbd51001c9071601ac3": {
+      "completion": "# Clarifications: shopping-cart\n\n## Question 1\n\n**Source**: line 1\n**Q**: Should we support discount codes?\n**Why it matters**: Impacts scenario coverage\n**A**: _[Pending answer]_\n**Required**: Yes\n",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub",
+        "tokensUsed": 70,
+        "responseTime": 200
+      }
+    },
+    "f2f56780f6e6b4c4560cde792030417af91f36a0ea4af4247a8ad6645ac3072b": {
+      "completion": "feature: Shopping cart\nscenarios:\n  - name: Apply valid discount\n    steps:\n      - type: given\n        text: I am on the cart page\n      - type: when\n        text: I enter discount code as \"SPRING\"\n      - type: then\n        text: I should see text \"Discount applied\"\n    selectors:\n      discount-input: \"input[data-testid='discount']\"\n      discount-banner: \"div[role='status']\"\nmetadata:\n  specId: \"33333333-3333-3333-3333-333333333333\"\n  generatedAt: \"2025-10-18T12:00:00Z\"\n  llmProvider: \"codex\"\n  llmModel: \"stub-model\"\n",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 220,
+        "responseTime": 420
+      }
+    },
+    "1660298c0800722cdc6c897946e124fc4562ec48d2f2bfa5774aa93ef0d71a06": {
+      "completion": "Feature: Shopping cart\n  Scenario: Apply valid discount\n    Given I am on the cart page\n    When I enter discount code as \"SPRING\"\n    Then I should see text \"Discount applied\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 200,
+        "responseTime": 400
+      }
+    },
+    "3480ff8cf256690cf02619c4e9bef93af6fe829aaa04490871a5fe2593b00573": {
+      "completion": "Feature: Login flows\n  Ensures credential login behaves as expected\n\n  @auth\n  Scenario: Successful credential login\n    Given I am on the login page\n    When I enter email as \"user@example.com\"\n    And I enter password as \"Secret1!\"\n    Then I should see text \"Dashboard\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "e4393b69d914db5ad2b0e98055d7f48fa1b03d116c1d33ad40aa014deab8f2d7": {
+      "completion": "Feature: Logout\n  Scenario: Basic logout\n    Given I am on the dashboard page\n    When I press the logout icon\n    Then I should see text \"Signed out\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "codex-typescript",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "3ca9dced260e36b6e1dd9ece6cbcb76670c35c543ce8bae0a7955acef7ee2756": {
+      "completion": "Feature: Login flows\n  Ensures credential login behaves as expected\n\n  @auth\n  Scenario: Successful credential login\n    Given I am on the login page\n    When I enter email as \"user@example.com\"\n    And I enter password as \"Secret1!\"\n    Then I should see text \"Dashboard\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "f9ff805d8be6f24f46ebb8fbd04e4485602cf66180c20b6e3b03d5660441a540": {
+      "completion": "Feature: Logout\n  Scenario: Basic logout\n    Given I am on the dashboard page\n    When I press the logout icon\n    Then I should see text \"Signed out\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "codex-typescript",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "728b39e1ed54b5c112c93139dc603fdf716c1967b344dfe58b38cf15dcbf5233": {
+      "completion": "# Clarifications: banking-transfer\n\n## Question 1\n\n**Source**: line 1\n**Q**: What is the maximum transfer amount?\n**Why it matters**: Drives boundary scenarios\n**A**: _[Pending answer]_\n**Required**: Yes\n",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub",
+        "tokensUsed": 80,
+        "responseTime": 180
+      }
+    },
+    "2c1a0b1a254bff5faaa0c14591e05d619f4a346802955b849153219ca12bc8ac": {
+      "completion": "feature: Banking transfer\nscenarios:\n  - name: Successful transfer below limit\n    steps:\n      - type: given\n        text: I am on the transfers page\n      - type: when\n        text: I enter amount as \"500\"\n        selector: transfer-amount-input\n      - type: then\n        text: I should see text \"Transfer scheduled\"\n        selector: transfer-confirmation\n    selectors:\n      transfer-amount-input: \"input[name='amount']\"\n      transfer-confirmation: \"div[role='status']\"\nmetadata:\n  specId: \"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb\"\n  generatedAt: \"2025-10-18T11:30:00Z\"\n  llmProvider: \"codex\"\n  llmModel: \"stub-model\"\n",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 220,
+        "responseTime": 420
+      }
+    },
+    "969558a48444e3e7e05a779c40068d84358e0aa6dc50c2236c9a3462119742ee": {
+      "completion": "Feature: Login flows\n  Ensures credential login behaves as expected\n\n  @auth\n  Scenario: Successful credential login\n    Given I am on the login page\n    When I enter email as \"user@example.com\"\n    And I enter password as \"Secret1!\"\n    Then I should see text \"Dashboard\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "1798bfe71a2a27f253730f3c9adf0c80df3e8dc1332d580cf41c1416f2d2638a": {
+      "completion": "Feature: Logout\n  Scenario: Basic logout\n    Given I am on the dashboard page\n    When I press the logout icon\n    Then I should see text \"Signed out\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "codex-typescript",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "22916583fb25927fc49f3fe10e280d25c149291fb7fa09bafd93b87a5a28170a": {
+      "completion": "# Clarifications: example-login\n\n## Question 1\n\n**Q**: Should social login providers appear on the page or only email/password?\n**Why it matters**: Determines UI scope\n**A**: _[Pending answer]_\n**Required**: Yes\n",
+      "metadata": {
+        "provider": "codex",
+        "model": "benchmark",
+        "tokensUsed": 64,
+        "responseTime": 150
+      }
+    },
+    "a0d6f187c353d81b554ff6e1bf56163b92621e263ad5c34580883f10d6750a06": {
+      "completion": "feature: Customer login\ndescription: Validate successful and failed login attempts for dashboard entry.\nscenarios:\n  - name: Successful login with valid credentials\n    tags:\n      - smoke\n      - auth\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: when\n        text: I enter email as \"qa.user@example.com\"\n        selector: email-input\n        testData:\n          email: qa.user@example.com\n      - type: when\n        text: I enter password as \"SuperSecure123!\"\n        selector: password-input\n        testData:\n          password: SuperSecure123!\n      - type: when\n        text: I click the submit button\n        selector: submit-button\n      - type: then\n        text: I should see text \"Welcome back\"\n        selector: dashboard-heading\n    selectors:\n      email-input: \"[data-testid='email-input']\"\n      password-input: \"[data-testid='password-input']\"\n      submit-button: \"button[aria-label='Sign in']\"\n      dashboard-heading: \"h1[aria-label='Welcome back']\"\n  - name: Invalid password displays inline error\n    tags:\n      - regression\n      - auth\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: when\n        text: I enter email as \"qa.user@example.com\"\n        selector: email-input\n      - type: when\n        text: I enter password as \"WrongPassword!\"\n        selector: password-input\n      - type: when\n        text: I click the submit button\n        selector: submit-button\n      - type: then\n        text: I should see text \"Invalid credentials provided\"\n        selector: error-banner\n    selectors:\n      email-input: \"[data-testid='email-input']\"\n      password-input: \"[data-testid='password-input']\"\n      submit-button: \"button[aria-label='Sign in']\"\n      error-banner: \"[role='alert'][data-testid='login-error']\"\nmetadata:\n  specId: \"11111111-1111-1111-1111-111111111111\"\n  generatedAt: \"2025-10-18T12:00:00.000Z\"\n  llmProvider: \"codex\"\n  llmModel: \"codex-typescript\"\n",
+      "metadata": {
+        "provider": "codex",
+        "model": "benchmark",
+        "tokensUsed": 128,
+        "responseTime": 220
+      }
+    },
+    "bdb1860707f54bbc4f1baad6a8e05455753a8aebdb6a8c0e1e7b7d220e25221b": {
+      "completion": "Feature: Customer login\n  @smoke @auth\n  Scenario: Successful login with valid credentials\n    Given I am on the login page\n    When I enter email as \"qa.user@example.com\"\n    And I enter password as \"SuperSecure123!\"\n    And I click the submit button\n    Then I should see text \"Welcome back\"\n\n  @regression @auth\n  Scenario: Invalid password displays inline error\n    Given I am on the login page\n    When I enter email as \"qa.user@example.com\"\n    And I enter password as \"WrongPassword!\"\n    And I click the submit button\n    Then I should see text \"Invalid credentials provided\"\n",
+      "metadata": {
+        "provider": "codex",
+        "model": "benchmark",
+        "tokensUsed": 256,
+        "responseTime": 310
+      }
+    },
+    "401eaf09af180698468aef8c8150f0410697267a8ad549d993f4d7e2ef0ad5b1": {
+      "completion": "Feature: Login flows\n  Ensures credential login behaves as expected\n\n  @auth\n  Scenario: Successful credential login\n    Given I am on the login page\n    When I enter email as \"user@example.com\"\n    And I enter password as \"Secret1!\"\n    Then I should see text \"Dashboard\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "e24d00e1d698c00998d2e8f916b84f1ce414706a2f843407f3e9fa64ab805e93": {
+      "completion": "Feature: Logout\n  Scenario: Basic logout\n    Given I am on the dashboard page\n    When I press the logout icon\n    Then I should see text \"Signed out\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "codex-typescript",
+        "tokensUsed": 256,
+        "responseTime": 640
+      }
+    },
+    "2f7f733566942eea874db2a5a2c5e9b11b74449b39b3f724b16b6229d2d61991": {
+      "completion": "Feature: Shopping cart\n  Scenario: Apply valid discount\n    Given I am on the cart page\n    When I enter discount code as \"SPRING\"\n    Then I should see text \"Discount applied\"",
+      "metadata": {
+        "provider": "codex",
+        "model": "stub-model",
+        "tokensUsed": 200,
+        "responseTime": 400
+      }
+    },
+    "106c40076cb5718ce5b05d967b09d66a17dfdf873f1e8cb910f241c58aa5dff7": {
+      "completion": "# Clarifications: example-login\n## Question 1\n\n**Source**: “User enters a valid email and password combination.”\n**Q**: What exact criteria define a “valid” email and password (allowed formats, case sensitivity, required test credentials) so automated checks know which inputs should succeed?\n**Why it matters**: Without precise credential rules, automated tests cannot deterministically separate valid vs invalid login attempts.\n**A**: _[Pending answer]_\n**Required**: Yes\n\n## Question 2\n\n**Source**: “Show an inline error messaging the invalid credentials.”\n**Q**: What is the exact inline error copy (and does it include any codes or icons) when the password is incorrect?\n**Why it matters**: Automation needs the precise message to assert the failure state without false positives.\n**A**: _[Pending answer]_\n**Required**: Yes\n\n## Question 3\n\n**Source**: “Show an inline error… Keep the submit button enabled for retry.”\n**Q**: Should the form reset the password field or keep the previously entered value after an invalid-password attempt?\n**Why it matters**: Knowing the expected field state ensures UI state assertions match the intended behavior.\n**A**: _[Pending answer]_\n**Required**: Yes\n\n## Question 4\n\n**Source**: Entire spec only covers valid login and wrong password cases.\n**Q**: How should the UI respond when the user submits an email that is not associated with any account?\n**Why it matters**: Lacking guidance on this path leaves a gap in negative test coverage for unknown accounts.\n**A**: _[Pending answer]_\n**Required**: Yes\n\n## Question 5\n\n**Source**: “Dashboard greets the user with a welcome message.”\n**Q**: What exact welcome message (text and personalization rules) must appear on the dashboard after a successful login?\n**Why it matters**: Automation must know the expected string to verify that authentication completed and the correct view rendered.\n**A**: _[Pending answer]_\n**Required**: Yes",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 4715,
+        "responseTime": 19943
+      }
+    },
+    "5d466a3add9227fe88d2a887841559b98c4fadc14dcc9d15ecf48ee6bcd90514": {
+      "completion": "feature: Customer Login\ndescription: Verifies authenticated access and credential error handling for the dashboard entry point.\nscenarios:\n  - name: Authenticate With Valid Credentials\n    tags:\n      - smoke\n      - auth\n    steps:\n      - type: given\n        text: Login page is displayed.\n      - type: when\n        text: User enters \"qa.user@example.com\" into the email field.\n        selector: email-input\n      - type: and\n        text: User enters \"<QA_PASSWORD>\" into the password field.\n        selector: password-input\n      - type: and\n        text: User clicks the submit button.\n        selector: submit-button\n      - type: then\n        text: Dashboard header displays \"Welcome back\".\n        selector: dashboard-header\n    selectors:\n      email-input: \"TODO: replace with email input selector\"\n      password-input: \"TODO: replace with password input selector\"\n      submit-button: \"TODO: replace with submit button selector\"\n      dashboard-header: \"TODO: replace with dashboard header selector\"\n    testData:\n      qa-credentials:\n        email: qa.user@example.com\n        password: \"SuperSecure123!\"\n      placeholders:\n        qa-password: \"<QA_PASSWORD>\"\n  - name: Show Error For Wrong Password\n    tags:\n      - regression\n      - auth\n    steps:\n      - type: given\n        text: Login page is displayed.\n      - type: when\n        text: User enters \"qa.user@example.com\" into the email field.\n        selector: email-input\n      - type: and\n        text: User enters \"<INVALID_PASSWORD>\" into the password field.\n        selector: password-input\n      - type: and\n        text: User clicks the submit button.\n        selector: submit-button\n      - type: then\n        text: Inline error displays \"Invalid credentials provided.\"\n        selector: inline-error\n      - type: and\n        text: Email field retains \"qa.user@example.com\".\n        selector: email-input\n      - type: and\n        text: Password field is empty after the error.\n        selector: password-input\n      - type: and\n        text: Submit button remains enabled for retry.\n        selector: submit-button\n    selectors:\n      email-input: \"TODO: replace with email input selector\"\n      password-input: \"TODO: replace with password input selector\"\n      submit-button: \"TODO: replace with submit button selector\"\n      inline-error: \"TODO: replace with inline error selector\"\n    testData:\n      qa-email: qa.user@example.com\n      invalid-password: \"WrongPass123!\"\n      placeholders:\n        invalid-password: \"<INVALID_PASSWORD>\"\n  - name: Mask Unknown Account Attempts\n    tags:\n      - regression\n      - auth\n    steps:\n      - type: given\n        text: Login page is displayed.\n      - type: when\n        text: User enters \"<UNKNOWN_EMAIL>\" into the email field.\n        selector: email-input\n      - type: and\n        text: User enters \"<QA_PASSWORD>\" into the password field.\n        selector: password-input\n      - type: and\n        text: User clicks the submit button.\n        selector: submit-button\n      - type: then\n        text: Inline error displays \"Invalid credentials provided.\"\n        selector: inline-error\n      - type: and\n        text: Email field retains \"<UNKNOWN_EMAIL>\".\n        selector: email-input\n      - type: and\n        text: Password field is empty after the error.\n        selector: password-input\n      - type: and\n        text: Submit button remains enabled for retry.\n        selector: submit-button\n    selectors:\n      email-input: \"TODO: replace with email input selector\"\n      password-input: \"TODO: replace with password input selector\"\n      submit-button: \"TODO: replace with submit button selector\"\n      inline-error: \"TODO: replace with inline error selector\"\n    testData:\n      unknown-account:\n        email: \"unknown.user@example.com\"\n      placeholders:\n        unknown-email: \"<UNKNOWN_EMAIL>\"\n        qa-password: \"<QA_PASSWORD>\"\nmetadata:\n  specId: 4bb90aa6-0bf2-4f9e-a0e4-4957332b2676\n  generatedAt: 2025-10-18T15:45:00Z\n  llmProvider: openai\n  llmModel: gpt-5-codex",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 16070,
+        "responseTime": 130298
+      }
+    },
+    "3cd41c605cccdafd597437bc9f137176b58303c8cfc08eb24af72be88b29e57c": {
+      "completion": "ERROR: Step text 'Password field is empty after the error.' is not covered by vocabulary.",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 6590,
+        "responseTime": 20759
+      }
+    },
+    "6be477a4204a51c363b71d6f1e8d511f0101e63de38461cfaf8c6197a4a06281": {
+      "completion": "Feature: Customer Login\n  Verifies authenticated access and credential error handling for the dashboard entry point.\n\n  @smoke @auth\n  Scenario: Authenticate With Valid Credentials\n    Given I am on the login page\n    When I enter email as \"<E2E_USER_EMAIL>\"\n    And I enter password as \"<E2E_USER_PASSWORD>\"\n    And I click the submit button\n    Then I should see text \"Welcome back\"\n    # selectors: email input (data-testid=email-input), password input (data-testid=password-input), submit button (aria-label=Sign in), dashboard header (aria-label=Welcome back)\n    # testData: <E2E_USER_EMAIL>=qa.user@example.com, <E2E_USER_PASSWORD>=SuperSecure123!\n\n  @regression @auth\n  Scenario: Show Error For Wrong Password\n    Given I am on the login page\n    When I enter email as \"<E2E_USER_EMAIL>\"\n    And I enter password as \"<INVALID_PASSWORD>\"\n    And I click the submit button\n    Then I should see text \"Invalid credentials provided.\"\n    # selectors: email input (data-testid=email-input), password input (data-testid=password-input), submit button (aria-label=Sign in), inline error alert (role=alert, data-testid=login-error)\n    # testData: <E2E_USER_EMAIL>=qa.user@example.com, <INVALID_PASSWORD>=WrongPass123!\n\n  @regression @auth\n  Scenario: Mask Unknown Account Attempts\n    Given I am on the login page\n    When I enter email as \"<UNKNOWN_EMAIL>\"\n    And I enter password as \"<E2E_USER_PASSWORD>\"\n    And I click the submit button\n    Then I should see text \"Invalid credentials provided.\"\n    # selectors: email input (data-testid=email-input), password input (data-testid=password-input), submit button (aria-label=Sign in), inline error alert (role=alert, data-testid=login-error)\n    # testData: <UNKNOWN_EMAIL>=unknown.user@example.com, <E2E_USER_PASSWORD>=SuperSecure123!\n\n# metadata: specId=4bb90aa6-0bf2-4f9e-a0e4-4957332b2676, provider=codex, model=gpt-5-codex, generatedAt=2025-10-18T15:45:00.000Z",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 8692,
+        "responseTime": 44046
+      }
+    },
+    "91bf243a9d1bc60ac103480f94acaf79f92a984458df178472ce114572ac01b7": {
+      "completion": "# Clarifications: example-login\n## Question 1\n\n**Source**: `Submit button logs user in.`\n**Q**: After a successful login, what exact outcome should the test assert (e.g., specific dashboard URL, visible element, or token)?\n**Why it matters**: We need a deterministic success criterion to verify the happy-path outcome.\n**A**: _ [Pending answer]_\n**Required**: Yes\n## Question 2\n\n**Source**: `User enters a valid email and password combination.`\n**Q**: Which specific test credentials (email and password) should automation use, and are there any password complexity rules that the fixtures must respect?\n**Why it matters**: Reliable credentials are necessary to execute the happy-path test repeatedly.\n**A**: _ [Pending answer]_\n**Required**: Yes\n## Question 3\n\n**Source**: `User enters a valid email and password combination.`\n**Q**: How should the login form treat email input regarding case sensitivity, whitespace trimming, and format validation?\n**Why it matters**: Knowing normalization rules lets us design edge-case tests without conflicting with implementation.\n**A**: _ [Pending answer]_\n**Required**: Yes\n## Question 4\n\n**Source**: `Show an inline error messaging the invalid credentials.`\n**Q**: What is the exact inline error message text or identifier we should assert when the password is incorrect?\n**Why it matters**: Precise messaging ensures the test can differentiate a correct error from other UI responses.\n**A**: _ [Pending answer]_\n**Required**: Yes\n## Question 5\n\n**Source**: `Invalid password:` block vs. absence of guidance for nonexistent accounts\n**Q**: When the email does not exist, should the UI behave the same as the invalid password case or show a different response?\n**Why it matters**: Automation must know which error state to expect for nonexistent accounts to avoid false failures.\n**A**: _ [Pending answer]_\n**Required**: Yes\n## Question 6\n\n**Source**: Entire login flow description lacking mention of secondary checks\n**Q**: Are there any secondary authentication steps (e.g., captcha, MFA prompts, account lockouts after N failures) that tests must handle?\n**Why it matters**: Hidden security steps can block automation if not accounted for in the test plan.\n**A**: _ [Pending answer]_\n**Required**: Yes",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 5680,
+        "responseTime": 29390
+      }
+    },
+    "11fa653a022f0f64fdae315448412fdaab7fa5d6d777405d3f97051d41aab369": {
+      "completion": "feature: Customer login\ndescription: Users must authenticate with email and password to reach the dashboard.\nscenarios:\n  - name: Log in successfully\n    steps:\n      - type: given\n        text: User is on the login page\n      - type: when\n        text: User enters email \"<TEST_EMAIL>\"\n        selector: email-input\n      - type: and\n        text: User enters password \"<TEST_PASSWORD>\"\n        selector: password-input\n      - type: and\n        text: User submits the login form\n        selector: submit-button\n      - type: then\n        text: User is redirected to \"/dashboard\"\n      - type: and\n        text: User sees heading \"Welcome back\"\n        selector: dashboard-heading\n    selectors:\n      email-input: TODO add locator for email input field\n      password-input: TODO add locator for password input field\n      submit-button: TODO add locator for submit button\n      dashboard-heading: TODO add locator for dashboard heading\n    testData:\n      validEmail: \"<TEST_EMAIL>\"\n      validPassword: \"<TEST_PASSWORD>\"\n  - name: Show inline error for invalid password\n    steps:\n      - type: given\n        text: User is on the login page\n      - type: when\n        text: User enters email \"<TEST_EMAIL>\"\n        selector: email-input\n      - type: and\n        text: User enters password \"<INVALID_PASSWORD>\"\n        selector: password-input\n      - type: and\n        text: User submits the login form\n        selector: submit-button\n      - type: then\n        text: Inline error \"Invalid credentials provided\" is displayed\n        selector: inline-error\n      - type: and\n        text: Email field retains \"<TEST_EMAIL>\" value\n        selector: email-input\n      - type: and\n        text: Password field is cleared after the failed attempt\n        selector: password-input\n      - type: and\n        text: Submit button remains enabled for retry\n        selector: submit-button\n    selectors:\n      email-input: TODO add locator for email input field\n      password-input: TODO add locator for password input field\n      submit-button: TODO add locator for submit button\n      inline-error: TODO add locator for inline error message\n    testData:\n      existingEmail: \"<TEST_EMAIL>\"\n      invalidPassword: \"<INVALID_PASSWORD>\"\n  - name: Show inline error for unknown email\n    steps:\n      - type: given\n        text: User is on the login page\n      - type: when\n        text: User enters email \"<UNKNOWN_EMAIL>\"\n        selector: email-input\n      - type: and\n        text: User enters password \"<TEST_PASSWORD>\"\n        selector: password-input\n      - type: and\n        text: User submits the login form\n        selector: submit-button\n      - type: then\n        text: Inline error \"Invalid credentials provided\" is displayed\n        selector: inline-error\n      - type: and\n        text: Submit button remains enabled for retry\n        selector: submit-button\n    selectors:\n      email-input: TODO add locator for email input field\n      password-input: TODO add locator for password input field\n      submit-button: TODO add locator for submit button\n      inline-error: TODO add locator for inline error message\n    testData:\n      unknownEmail: \"<UNKNOWN_EMAIL>\"\n      password: \"<TEST_PASSWORD>\"\n  - name: Block submission with empty required fields\n    steps:\n      - type: given\n        text: User is on the login page\n      - type: when\n        text: User submits the login form without entering email or password\n        selector: submit-button\n      - type: then\n        text: Browser-level HTML5 validation prevents form submission\n      - type: and\n        text: Email field reports a required-field validation state\n        selector: email-input\n    selectors:\n      submit-button: TODO add locator for submit button\n      email-input: TODO add locator for email input field\nmetadata:\n  specId: c88b3b48-53fd-4dc8-b957-0cd2f6c7a7b0\n  generatedAt: 2025-10-18T16:00:00Z\n  llmProvider: cli\n  llmModel: gpt-5-codex",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 27426,
+        "responseTime": 154548
+      }
+    },
+    "835c25925056952093fe5f7d9b3743f1688fadb7a7c14db197e97cc83547d8d7": {
+      "completion": "ERROR: Step text 'Email field retains \"<TEST_EMAIL>\" value' is not covered by vocabulary.",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 7344,
+        "responseTime": 36772
+      }
+    },
+    "224aea5305e8b6a62aa8e0609dc80d08d31c9ca5e92a38839d156deb4f6ac7ec": {
+      "completion": "Feature: Customer login\n  Users must authenticate with email and password to reach the dashboard.\n\n  Background:\n    Given I am on the login page\n\n  Scenario: Log In Successfully\n    When I enter email as \"<E2E_USER_EMAIL>\"\n    And I enter password as \"<E2E_USER_PASSWORD>\"\n    And I click the submit button\n    Then I am on the dashboard page\n    And I should see text \"Welcome back\"\n\n  Scenario: Show Error For Invalid Password\n    When I enter email as \"<E2E_USER_EMAIL>\"\n    And I enter password as \"<E2E_INVALID_PASSWORD>\"\n    And I click the submit button\n    Then I should see text \"Invalid credentials provided\"\n    And I am on the login page\n\n  Scenario: Show Error For Unknown Email\n    When I enter email as \"<E2E_UNKNOWN_EMAIL>\"\n    And I enter password as \"<E2E_USER_PASSWORD>\"\n    And I click the submit button\n    Then I should see text \"Invalid credentials provided\"\n    And I am on the login page\n\n  Scenario: Prevent Submission With Empty Fields\n    When I click the submit button\n    Then I am on the login page\n\n# generatedAt: 2025-10-18T13:54:35.000Z\n# llmProvider: codex\n# llmModel: gpt-5-codex",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 6285,
+        "responseTime": 19738
+      }
+    },
+    "74c6a37c2490c023c9aad1d61268e28e1ad03a3b5f4bf4a0f68a60d1b00085dd": {
+      "completion": "# Clarifications: example-login\n\n## Question 1\n\n**Source**: \"Submit button logs user in.\"\n**Q**: After a successful login, what page or visible element should the test assert to confirm the user reached the dashboard?\n**Why it matters**: Determines the selector or URL the automated test must wait for to confirm success.\n**A**: _[Pending answer]_\n**Required**: Yes\n\n## Question 2\n\n**Source**: \"User enters a valid email and password combination.\"\n**Q**: Which credential values (email and password) should automated tests use to represent a valid customer login?\n**Why it matters**: Ensures deterministic credentials are available for end-to-end automation.\n**A**: _[Pending answer]_\n**Required**: Yes\n\n## Question 3\n\n**Source**: \"Show an inline error messaging the invalid credentials.\"\n**Q**: What is the exact inline error copy (including capitalization and punctuation) displayed for an invalid password attempt?\n**Why it matters**: Automated checks need the precise text to assert against.\n**A**: _[Pending answer]_\n**Required**: Yes\n\n## Question 4\n\n**Source**: \"Keep the submit button enabled for retry.\"\n**Q**: After an invalid password attempt, should the email and password input values be cleared or preserved for the retry?\n**Why it matters**: Defines the expected state of form inputs the test should validate before reattempting.\n**A**: _[Pending answer]_\n**Required**: No",
+      "metadata": {
+        "provider": "codex",
+        "model": "codex-typescript",
+        "tokensUsed": 0,
+        "responseTime": 0
+      }
+    },
+    "55c6b06d61bb1596767ca78580e1baa28f965f52eb58a94c3bc23560c7e92548": {
+      "completion": "feature: Customer login\ndescription: Users authenticate with email and password to reach the dashboard.\nscenarios:\n  - name: Authenticate With Valid Credentials\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: when\n        text: I enter email as <E2E_USER_EMAIL>\n      - type: and\n        text: I enter password as <E2E_USER_PASSWORD>\n      - type: and\n        text: I click the submit button\n      - type: then\n        text: I should see text Welcome back\n    selectors:\n      login-page: 'TODO: add navigation assertion for /login'\n      email-input: 'TODO: add selector for email input'\n      password-input: 'TODO: add selector for password input'\n      submit-button: 'TODO: add selector for submit button'\n      dashboard-heading: 'TODO: add selector for dashboard heading'\n    testData:\n      email: <E2E_USER_EMAIL>\n      password: <E2E_USER_PASSWORD>\n  - name: Retry After Invalid Password\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: when\n        text: I enter email as <E2E_USER_EMAIL>\n      - type: and\n        text: I enter password as <INVALID_PASSWORD>\n      - type: and\n        text: I click the submit button\n      - type: then\n        text: I should see text Invalid credentials provided\n      - type: and\n        text: I enter password as <E2E_USER_PASSWORD>\n      - type: and\n        text: I click the submit button\n      - type: then\n        text: I should see text Welcome back\n    selectors:\n      login-page: 'TODO: add navigation assertion for /login'\n      email-input: 'TODO: add selector for email input'\n      password-input: 'TODO: add selector for password input'\n      submit-button: 'TODO: add selector for submit button'\n      error-message: 'TODO: add selector for inline error message'\n      dashboard-heading: 'TODO: add selector for dashboard heading'\n    testData:\n      email: <E2E_USER_EMAIL>\n      invalidPassword: <INVALID_PASSWORD>\n      password: <E2E_USER_PASSWORD>\n  - name: Reject Unknown Email\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: when\n        text: I enter email as <UNKNOWN_EMAIL>\n      - type: and\n        text: I enter password as <E2E_USER_PASSWORD>\n      - type: and\n        text: I click the submit button\n      - type: then\n        text: I should see text Invalid credentials provided\n    selectors:\n      login-page: 'TODO: add navigation assertion for /login'\n      email-input: 'TODO: add selector for email input'\n      password-input: 'TODO: add selector for password input'\n      submit-button: 'TODO: add selector for submit button'\n      error-message: 'TODO: add selector for inline error message'\n    testData:\n      email: <UNKNOWN_EMAIL>\n      password: <E2E_USER_PASSWORD>\n  - name: Block Empty Submission\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: when\n        text: I click the submit button\n      - type: then\n        text: I should see text Please fill out this field.\n    selectors:\n      login-page: 'TODO: add navigation assertion for /login'\n      submit-button: 'TODO: add selector for submit button'\n      required-field-message: 'TODO: add selector for required field validation prompt'\n    testData:\n      requiredMessage: 'Please fill out this field.'\nmetadata:\n  specId: b9aa49ee-bcc2-4af6-be87-50f4d1c0d585\n  generatedAt: 2025-10-19T15:00:00.000Z\n  llmProvider: codex\n  llmModel: gpt-5-codex",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 12660,
+        "responseTime": 140168
+      }
+    },
+    "a55aab6615a7e605a59e84d16644dd9667d3837bc77da4f9a34e45378dce7262": {
+      "completion": "feature: Social login options\ndescription: Validates social login layout, loading state, and successful authentication handling.\nscenarios:\n  - name: Validate Social Login Layout\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: then\n        text: I should see text Social login section is displayed below the email/password form with 40px margin-top\n      - type: and\n        text: I should see text Social login buttons are visible based on SocialLogin component configuration\n      - type: and\n        text: I should see text Social login provider options are available to select\n    selectors:\n      login-page: TODO: define selector for login page container\n      social-login-section: TODO: define selector verifying section below form with 40px margin-top\n      social-login-button: TODO: define selector for social login provider button group\n  - name: Trigger Social Login Loading State\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: when\n        text: I click the social login provider button\n      - type: then\n        text: I should see text Social login loading state is active from isSocialLoginLoading\n      - type: and\n        text: I should see text isSocialLoginLoading disables all email and password inputs\n      - type: and\n        text: I should see text Submit button is disabled and cannot be used\n    selectors:\n      login-page: TODO: define selector for login page container\n      social-login-button: TODO: define selector for social login provider button group\n      email-input: TODO: define selector for email input disabled state\n      password-input: TODO: define selector for password input disabled state\n      submit-button: TODO: define selector for submit button disabled state\n  - name: Complete Social Login Success Flow\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: when\n        text: I click the social login provider button\n      - type: then\n        text: I should see text Authentication succeeds with the social provider\n      - type: and\n        text: I should see text Access and refresh tokens stored in cookies with maxAge of ONE_WEEK_IN_SECONDS\n      - type: and\n        text: I should see text Login modal closes after successful social login\n      - type: and\n        text: I should see text User is redirected via pathRedirectAfterLogin when redirect path exists\n    selectors:\n      login-page: TODO: define selector for login page container\n      social-login-button: TODO: define selector for social login provider button group\n      auth-cookies: TODO: confirm cookie storage mechanism for social login tokens\n      login-modal: TODO: define selector for login modal container\n      redirect-handler: TODO: confirm selector for pathRedirectAfterLogin router logic\nmetadata:\n  specId: 6f5c2b34-894a-4bce-b786-df5c9d3d6a2d\n  generatedAt: 2025-10-19T15:00:00.000Z\n  llmProvider: codex\n  llmModel: gpt-5-codex",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 10264,
+        "responseTime": 77711
+      }
+    },
+    "ac073f5bfa325cd36c62ba0889358754dcfcd7c70300950b4cbed473e1b5d797": {
+      "completion": "feature: Login security controls\ndescription: Handles account protection and security restrictions.\nscenarios:\n  - name: Prevent Locked Account Login\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: and\n        text: I enter email field as <E2E_USER_EMAIL>\n      - type: and\n        text: I enter password field as <E2E_USER_PASSWORD>\n      - type: when\n        text: I click the submit button\n      - type: then\n        text: I should see text Your account has been locked. Please contact support\n      - type: and\n        text: I should see text contact support\n    selectors:\n      login-page: \"TODO: set selector for login page\"\n      email-field: \"TODO: set selector for email input\"\n      password-field: \"TODO: set selector for password input\"\n      submit-button: \"TODO: set selector for submit button\"\n      support-link: \"a[target=\\\"_blank\\\"][rel=\\\"noopener noreferrer\\\"]\"\n    testData:\n      accountLockedMessageKey: ACCOUNT_LOCKED_MESSAGE\n      helpCenterUrl: HELP_CENTER_URL\n      backendErrorCode: error.login_attempt_count_exceeded\n  - name: Redirect Restricted Location Attempt\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: and\n        text: I enter email field as <E2E_USER_EMAIL>\n      - type: and\n        text: I enter password field as <E2E_USER_PASSWORD>\n      - type: when\n        text: I click the submit button\n      - type: then\n        text: I am on the restricted page\n    selectors:\n      login-page: \"TODO: set selector for login page\"\n      email-field: \"TODO: set selector for email input\"\n      password-field: \"TODO: set selector for password input\"\n      submit-button: \"TODO: set selector for submit button\"\n      restricted-page: \"TODO: map to restricted page route RESTRICTED_PAGE_URL\"\n    testData:\n      restrictedPageUrl: RESTRICTED_PAGE_URL\n      backendErrorCode: error.player.location_blocked\n  - name: Block Self-Excluded Login\n    steps:\n      - type: given\n        text: I am on the login page\n      - type: and\n        text: I enter email field as <E2E_SELF_EXCLUDED_EMAIL>\n      - type: and\n        text: I enter password field as <E2E_USER_PASSWORD>\n      - type: when\n        text: I click the submit button\n      - type: then\n        text: I should see text Self-exclusion timeout\n      - type: and\n        text: I should see text Start time: <TIMEOUT_START>\n      - type: and\n        text: I should see text End time: <TIMEOUT_END>\n      - type: and\n        text: I should see text <TIMEOUT_OPTION>\n    selectors:\n      login-page: \"TODO: set selector for login page\"\n      email-field: \"TODO: set selector for email input\"\n      password-field: \"TODO: set selector for password input\"\n      submit-button: \"TODO: set selector for submit button\"\n      timeout-modal: \"TODO: set selector for timeout modal\"\n      timeout-type: \"TODO: set selector for timeout type text\"\n      timeout-start: \"TODO: set selector for timeout start text\"\n      timeout-end: \"TODO: set selector for timeout end text\"\n      timeout-option: \"TODO: set selector for timeout option control\"\n    testData:\n      timeoutType: \"<TIMEOUT_TYPE>\"\n      timeoutStart: \"<TIMEOUT_START>\"\n      timeoutEnd: \"<TIMEOUT_END>\"\n      timeoutOption: \"<TIMEOUT_OPTION>\"\n      backendErrorCode: self_excluded\nmetadata:\n  specId: 7c9db0c3-dbb6-4d1e-bdc0-45f8f57c8f43\n  generatedAt: 2025-10-19T15:00:00.000Z\n  llmProvider: codex\n  llmModel: gpt-5-codex",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 11312,
+        "responseTime": 108699
+      }
+    },
+    "b602e5a4842faacfebd3c8d1290d33aff2a3c53b091e22d403713cc7e7ea5f59": {
+      "completion": "ERROR: Cannot map steps for disabled submit state to the approved step vocabulary.",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 7114,
+        "responseTime": 54512
+      }
+    },
+    "e4efca90865654733a8bec6d9abbb2f51baebb055f97725ae2b3b37526d3b16f": {
+      "completion": "feature: Login with credentials\ndescription: Users authenticate with email and password to access their account.\nscenarios:\n- name: Authenticate With Valid Credentials\n  steps:\n  - type: given\n    text: \"I am on the login page\"\n  - type: when\n    text: \"I enter email as <E2E_USER_EMAIL>\"\n  - type: and\n    text: \"I enter password as <E2E_USER_PASSWORD>\"\n  - type: and\n    text: \"I click the submit button\"\n  - type: then\n    text: \"I am on the dashboard page\"\n  - type: and\n    text: \"I should see text Welcome back\"\n  selectors:\n    login-page: \"TODO add login page route\"\n    email-field: \"TODO add selector for email input\"\n    password-field: \"TODO add selector for password input\"\n    submit-button: \"TODO add selector for submit button\"\n    dashboard-page: \"/dashboard\"\n    welcome-message: \"TODO add selector for welcome text\"\n  testData:\n    validCredentials:\n      email: \"<E2E_USER_EMAIL>\"\n      password: \"<E2E_USER_PASSWORD>\"\n- name: Handle Invalid Password Error\n  steps:\n  - type: given\n    text: \"I am on the login page\"\n  - type: when\n    text: \"I enter email as <E2E_USER_EMAIL>\"\n  - type: and\n    text: \"I enter password as <E2E_INVALID_PASSWORD>\"\n  - type: and\n    text: \"I click the submit button\"\n  - type: then\n    text: \"I should see text Invalid credentials provided\"\n  - type: and\n    text: \"I should see text <E2E_USER_EMAIL>\"\n  - type: and\n    text: \"I click the submit button\"\n  selectors:\n    login-page: \"TODO add login page route\"\n    email-field: \"TODO add selector for email input\"\n    password-field: \"TODO add selector for password input\"\n    submit-button: \"TODO add selector for submit button\"\n    error-message: \"TODO add selector for authentication error text\"\n  testData:\n    invalidCredentials:\n      email: \"<E2E_USER_EMAIL>\"\n      password: \"<E2E_INVALID_PASSWORD>\"\n- name: Reject Unknown Email Login\n  steps:\n  - type: given\n    text: \"I am on the login page\"\n  - type: when\n    text: \"I enter email as <E2E_UNKNOWN_EMAIL>\"\n  - type: and\n    text: \"I enter password as <E2E_USER_PASSWORD>\"\n  - type: and\n    text: \"I click the submit button\"\n  - type: then\n    text: \"I should see text Invalid credentials provided\"\n  - type: and\n    text: \"I click the submit button\"\n  selectors:\n    login-page: \"TODO add login page route\"\n    email-field: \"TODO add selector for email input\"\n    password-field: \"TODO add selector for password input\"\n    submit-button: \"TODO add selector for submit button\"\n    error-message: \"TODO add selector for authentication error text\"\n  testData:\n    unknownCredentials:\n      email: \"<E2E_UNKNOWN_EMAIL>\"\n      password: \"<E2E_USER_PASSWORD>\"\nmetadata:\n  specId: 6c6a5d1d-1804-4f6c-993f-966e0cf6f0ca\n  generatedAt: 2025-10-19T18:00:00.000Z\n  llmProvider: codex\n  llmModel: gpt-5-codex",
+      "metadata": {
+        "provider": "codex",
+        "model": "gpt-5-codex",
+        "tokensUsed": 11543,
+        "responseTime": 110615
+      }
+    }
+  }
+}

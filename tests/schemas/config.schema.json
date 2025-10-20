@@ -1,0 +1,355 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cazino-frontend.com/schemas/pipeline-config.schema.json",
+  "title": "LLM BDD Pipeline Configuration",
+  "description": "Configuration for the LLM-powered BDD test generation pipeline",
+  "type": "object",
+  "required": [
+    "version",
+    "llm",
+    "paths",
+    "prompts",
+    "timeouts",
+    "retries",
+    "clarification",
+    "ci",
+    "logging"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the pipeline configuration"
+    },
+    "llm": {
+      "type": "object",
+      "required": [
+        "provider",
+        "model",
+        "temperature",
+        "maxTokens"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "codex",
+            "claude"
+          ],
+          "description": "Primary LLM provider"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Model identifier for the configured provider"
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2,
+          "default": 0.3,
+          "description": "Sampling temperature applied to LLM calls"
+        },
+        "maxTokens": {
+          "type": "integer",
+          "minimum": 256,
+          "maximum": 100000,
+          "description": "Maximum tokens returned by the LLM"
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 180000,
+          "default": 180000,
+          "description": "Timeout applied to each LLM request in milliseconds"
+        }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "required": [
+        "qaSpecs",
+        "clarifications",
+        "normalized",
+        "features",
+        "steps",
+        "schemas",
+        "contracts",
+        "prompts",
+        "artifacts"
+      ],
+      "properties": {
+        "qaSpecs": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory containing plain-text QA specifications"
+        },
+        "clarifications": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory for LLM-generated clarification markdown files"
+        },
+        "normalized": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory storing normalized YAML files"
+        },
+        "features": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory storing generated Gherkin features"
+        },
+        "steps": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory containing Playwright step definitions"
+        },
+        "schemas": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory containing JSON schemas"
+        },
+        "contracts": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory containing schema contracts"
+        },
+        "prompts": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory containing prompt templates"
+        },
+        "artifacts": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory for pipeline artifacts (reports, registries)"
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "required": [
+        "questions",
+        "normalize",
+        "features",
+        "selectors"
+      ],
+      "properties": {
+        "questions": {
+          "type": "string",
+          "pattern": "^tests/prompts/.*\\.md$",
+          "description": "Prompt template for spec-to-questions generation"
+        },
+        "normalize": {
+          "type": "string",
+          "pattern": "^tests/prompts/.*\\.md$",
+          "description": "Prompt template for normalization to YAML"
+        },
+        "features": {
+          "type": "string",
+          "pattern": "^tests/prompts/.*\\.md$",
+          "description": "Prompt template for YAML-to-feature generation"
+        },
+        "selectors": {
+          "type": "string",
+          "pattern": "^tests/prompts/.*\\.md$",
+          "description": "Prompt template for selector validation or remediation"
+        }
+      }
+    },
+    "timeouts": {
+      "type": "object",
+      "required": [
+        "clarificationMs",
+        "normalizationMs",
+        "featureGenerationMs",
+        "validationMs"
+      ],
+      "properties": {
+        "clarificationMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 180000,
+          "description": "Timeout for clarification generation step"
+        },
+        "normalizationMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 180000,
+          "description": "Timeout for YAML normalization step"
+        },
+        "featureGenerationMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 180000,
+          "description": "Timeout for feature generation step"
+        },
+        "validationMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 600000,
+          "description": "Timeout for validation and linting"
+        }
+      }
+    },
+    "retries": {
+      "type": "object",
+      "required": [
+        "maxAttempts",
+        "backoffSeconds"
+      ],
+      "properties": {
+        "maxAttempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3,
+          "description": "Maximum retry attempts for recoverable operations"
+        },
+        "backoffSeconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 30,
+          "description": "Base backoff window between retries"
+        }
+      }
+    },
+    "clarification": {
+      "type": "object",
+      "required": [
+        "maxRounds",
+        "requireAllAnswers"
+      ],
+      "properties": {
+        "maxRounds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5,
+          "default": 3,
+          "description": "Maximum clarification loops before escalation"
+        },
+        "requireAllAnswers": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether YAML generation is blocked until all required answers are provided"
+        }
+      }
+    },
+    "ci": {
+      "type": "object",
+      "required": [
+        "artifactRetentionDays",
+        "validateCommand",
+        "failFast"
+      ],
+      "properties": {
+        "artifactRetentionDays": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 365,
+          "default": 30,
+          "description": "Retention period for generated artifacts"
+        },
+        "validateCommand": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Command executed in CI to run pipeline validation"
+        },
+        "failFast": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether CI should stop on first validation error"
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "required": [
+        "format",
+        "directory"
+      ],
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "json",
+            "text"
+          ],
+          "default": "json",
+          "description": "Log format for pipeline output"
+        },
+        "directory": {
+          "type": "string",
+          "pattern": "^tests/",
+          "description": "Directory for storing pipeline logs"
+        },
+        "level": {
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "default": "info",
+          "description": "Log verbosity level"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "version": "1.0.0",
+      "llm": {
+        "provider": "codex",
+        "model": "codex-typescript",
+        "temperature": 0.3,
+        "maxTokens": 4000,
+        "timeoutMs": 180000
+      },
+      "paths": {
+        "qaSpecs": "tests/qa-specs",
+        "clarifications": "tests/clarifications",
+        "normalized": "tests/normalized",
+        "features": "tests/features",
+        "steps": "tests/steps",
+        "schemas": "tests/schemas",
+        "contracts": "tests/contracts",
+        "prompts": "tests/prompts",
+        "artifacts": "tests/artifacts"
+      },
+      "prompts": {
+        "questions": "tests/prompts/spec-to-questions.md",
+        "normalize": "tests/prompts/questions-to-yaml.md",
+        "features": "tests/prompts/yaml-to-features.md",
+        "selectors": "tests/prompts/selector-remediation.md"
+      },
+      "timeouts": {
+        "clarificationMs": 180000,
+        "normalizationMs": 180000,
+        "featureGenerationMs": 180000,
+        "validationMs": 600000
+      },
+      "retries": {
+        "maxAttempts": 3,
+        "backoffSeconds": 30
+      },
+      "clarification": {
+        "maxRounds": 3,
+        "requireAllAnswers": true
+      },
+      "ci": {
+        "artifactRetentionDays": 30,
+        "validateCommand": "yarn spec:validate",
+        "failFast": true
+      },
+      "logging": {
+        "format": "json",
+        "directory": "tests/artifacts/logs",
+        "level": "info"
+      }
+    }
+  ]
+}

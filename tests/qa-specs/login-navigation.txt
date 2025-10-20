@@ -1,0 +1,31 @@
+Feature: Login navigation and redirects
+
+Handles navigation flows from login page.
+
+Forgot password:
+- User opens the login page.
+- User clicks "Forgot your password?" link.
+- Login modal closes.
+- Reset password modal opens.
+
+Switch to sign up:
+- User opens the login page.
+- User clicks "Sign up" link.
+- Login modal closes.
+- Sign up modal opens.
+
+Redirect after login:
+- User navigates to login with redirect parameter.
+- User enters valid credentials.
+- User clicks submit button.
+- User is authenticated successfully.
+- System redirects to intended destination.
+- Redirect path is cleared from state.
+
+Direct login:
+- User navigates to login without redirect parameter.
+- User enters valid credentials.
+- User clicks submit button.
+- User is authenticated successfully.
+- Login modal closes.
+- User remains on current page.

@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cazino-frontend.com/schemas/yaml-spec.schema.json",
+  "title": "Normalized YAML Specification",
+  "description": "Structured test specification validated before feature generation",
+  "type": "object",
+  "required": ["feature", "scenarios", "metadata"],
+  "properties": {
+    "feature": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200,
+      "description": "Feature name"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Optional feature description"
+    },
+    "background": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/step"
+          }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "steps", "selectors"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 200,
+            "description": "Scenario name"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+$"
+            },
+            "description": "Scenario tags for organization"
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/definitions/step"
+            }
+          },
+          "selectors": {
+            "type": "object",
+            "patternProperties": {
+              "^[a-z0-9-]+$": {
+                "type": "string",
+                "description": "Playwright locator string"
+              }
+            },
+            "description": "Selector ID to locator mapping"
+          },
+          "testData": {
+            "type": "object",
+            "description": "Optional test data for scenario"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["specId", "generatedAt", "llmProvider", "llmModel"],
+      "properties": {
+        "specId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "References original QA specification"
+        },
+        "generatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp"
+        },
+        "llmProvider": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "azure-openai", "cli"],
+          "description": "LLM provider used for generation"
+        },
+        "llmModel": {
+          "type": "string",
+          "description": "Specific model version"
+        },
+        "clarificationsHash": {
+          "type": "string",
+          "description": "SHA-256 hash of clarifications content for change detection"
+        }
+      }
+    }
+  },
+  "definitions": {
+    "step": {
+      "type": "object",
+      "required": ["type", "text"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["given", "when", "then", "and", "but"],
+          "description": "Gherkin step type"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Step text (must match vocabulary)"
+        },
+        "selector": {
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Optional selector ID reference"
+        },
+        "testData": {
+          "type": "object",
+          "description": "Optional test data for step"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "feature": "User Authentication",
+      "description": "Test login functionality with email and password",
+      "scenarios": [
+        {
+          "name": "Successful login with valid credentials",
+          "tags": ["smoke", "auth"],
+          "steps": [
+            {
+              "type": "given",
+              "text": "I am on the login page"
+            },
+            {
+              "type": "when",
+              "text": "I enter email as \"test@example.com\"",
+              "selector": "email-input"
+            },
+            {
+              "type": "when",
+              "text": "I enter password as \"secure123\"",
+              "selector": "password-input"
+            },
+            {
+              "type": "when",
+              "text": "I click the login button",
+              "selector": "login-button"
+            },
+            {
+              "type": "then",
+              "text": "I should see the dashboard",
+              "selector": "dashboard-heading"
+            }
+          ],
+          "selectors": {
+            "email-input": "input[data-testid='email']",
+            "password-input": "input[data-testid='password']",
+            "login-button": "button[aria-label='Login']",
+            "dashboard-heading": "h1[role='heading']"
+          }
+        }
+      ],
+      "metadata": {
+        "specId": "550e8400-e29b-41d4-a716-446655440000",
+        "generatedAt": "2025-10-18T10:30:00Z",
+        "llmProvider": "openai",
+        "llmModel": "gpt-4"
+      }
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+tests/.features-gen/
+
+# Test artifacts
+tests/artifacts/reports/
+tests/artifacts/screenshots/
+tests/artifacts/videos/
+tests/artifacts/logs/*.log
+!tests/artifacts/logs/.gitkeep
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log

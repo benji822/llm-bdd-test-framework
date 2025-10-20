@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2020",
+    "lib": ["es2020"],
+    "types": ["node", "@playwright/test"],
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "resolveJsonModule": true
+  },
+  "include": ["tests/**/*"],
+  "exclude": ["node_modules", "tests/.features-gen"]
+}
