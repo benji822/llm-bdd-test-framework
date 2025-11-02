@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+
+cat << 'EOF'
+# Debug with Research Workflow
+
+I'll help debug this issue using both Oracle for analysis and Librarian for external research.
+
+## Phase 1: Problem Analysis (Oracle)
+
+First, I'll use Oracle to analyze the problem:
+
+"Use Oracle to analyze this debugging issue:
+
+**Problem Description:**
+[Please describe the issue you're experiencing]
+
+**Symptoms:**
+- What are you seeing? Error messages, unexpected behavior, etc.
+- When does it occur? During which pipeline stage?
+- Environment: Local/CI, which LLM provider, etc.
+
+**Affected Files:**
+[List relevant files and what you suspect might be wrong]
+
+**Recent Changes:**
+[Any recent modifications that might be related]
+
+**Expected vs Actual:**
+What should happen vs what is happening?
+
+Oracle should:
+1. Identify likely root causes
+2. Suggest specific files and lines to investigate
+3. Propose initial diagnostic steps
+4. Consider LLM integration, caching, and pipeline architecture"
+
+## Phase 2: Research (Librarian)
+
+Based on Oracle's analysis, I'll research similar issues:
+
+"Use Librarian to research this debugging issue. Search our framework's dependencies and similar projects:
+
+**Search Terms:**
+[Based on Oracle's findings, what should we search for?]
+
+**Repos to Check:**
+- LLM provider SDK repos (openai/codex-sdk, anthropic/claude-agent-sdk)
+- Testing framework repos (microsoft/playwright, cucumber/gherkin)
+- Similar BDD frameworks
+
+**Focus Areas:**
+- Error messages and their causes
+- Configuration issues
+- Integration patterns
+- Known bugs and workarounds
+
+Find specific code examples and solutions."
+
+## Phase 3: Solution Implementation
+
+With findings from both Oracle and Librarian, I'll:
+1. Identify the root cause
+2. Propose specific code changes
+3. Test the fix locally
+4. Document the solution
+
+## Phase 4: Prevention
+
+Finally, I'll suggest how to prevent similar issues:
+- Code changes or patterns to adopt
+- Tests to add
+- Documentation to update
+- Monitoring or alerting to implement
+
+This systematic approach ensures we leverage both internal expertise (Oracle) and external knowledge (Librarian) for comprehensive debugging.
+EOF

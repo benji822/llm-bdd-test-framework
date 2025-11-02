@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+
+cat << 'EOF'
+# BDD Testing Framework Architecture Review
+
+I'll conduct a comprehensive architecture review of our LLM-powered BDD testing framework using Oracle.
+
+## Phase 1: Gather Context
+
+First, I'll identify the key architectural components:
+- Pipeline stages (questions → normalize → features → execute)
+- LLM provider abstraction and caching
+- Selector registry and vocabulary management
+- Schema validation and error handling
+- CI/CD integration and determinism
+
+## Phase 2: Oracle Analysis
+
+Then I'll use Oracle to analyze:
+
+"Use Oracle to review this BDD testing framework architecture. Focus on:
+
+1. **Pipeline Design**: Are the stages well-separated with clear responsibilities?
+2. **LLM Integration**: Is the provider abstraction robust and the caching effective?
+3. **Data Flow**: How do plain text specs transform through normalized YAML to Gherkin?
+4. **Error Handling**: Are failures handled gracefully with good error messages?
+5. **Performance**: Are the caching and parallel processing optimizations effective?
+6. **Maintainability**: Is the codebase organized for easy extension and debugging?
+7. **Security**: Are there any security concerns with LLM integration or secret handling?
+8. **Testing**: Does the framework adequately test itself?
+
+Provide specific issues with file paths and line numbers.
+Suggest concrete improvements with code examples where relevant."
+
+## Phase 3: Detailed Analysis
+
+For each issue Oracle identifies, I'll:
+1. Show the problematic code
+2. Explain why it's an issue
+3. Provide a refactored example
+4. Estimate effort to fix
+
+## Phase 4: Prioritized Recommendations
+
+Finally, I'll prioritize fixes by:
+- Impact on reliability and performance
+- Effort to implement
+- Risk of introducing new issues
+- Alignment with our LLM-powered BDD goals
+
+This review will help ensure our framework remains maintainable as we add new features and LLM providers.
+EOF

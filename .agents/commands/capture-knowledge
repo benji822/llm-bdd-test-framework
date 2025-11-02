@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+cat << 'EOF'
+# Knowledge Capture Workflow
+
+I'll help you document this solution and capture it for team knowledge sharing.
+
+## Phase 1: Solution Summary
+
+First, let's summarize what we solved:
+
+**Problem:**
+[Brief description of the issue we solved]
+
+**Root Cause:**
+[What was actually causing the problem]
+
+**Solution:**
+[High-level description of how we fixed it]
+
+**Files Changed:**
+[List the key files that were modified]
+
+## Phase 2: Technical Details
+
+Now let's document the technical implementation:
+
+**Code Changes:**
+[Specific code changes made, with before/after examples]
+
+**Configuration Updates:**
+[Any environment variables, settings, or configurations changed]
+
+**Dependencies:**
+[New dependencies added or versions updated]
+
+## Phase 3: Testing & Validation
+
+Document how we verified the fix:
+
+**Test Cases Added:**
+[New tests written to prevent regression]
+
+**Manual Testing:**
+[Steps taken to verify the fix works]
+
+**CI Validation:**
+[How we ensured CI still passes]
+
+## Phase 4: Knowledge Documentation
+
+I'll create comprehensive documentation:
+
+**Location:** `docs/knowledge/[topic]-[timestamp].md`
+
+**Contents:**
+- Problem statement with context
+- Investigation process (Oracle + Librarian findings)
+- Root cause analysis
+- Solution implementation
+- Testing approach
+- Prevention measures
+- Related issues and patterns
+
+**Thread Sharing:**
+- Set this thread to "Workspace-shared"
+- Add link to the knowledge document
+- Share in team communication channels
+
+## Phase 5: Prevention & Monitoring
+
+Finally, let's ensure this doesn't happen again:
+
+**Code Patterns:**
+[Any new patterns or best practices to adopt]
+
+**Monitoring:**
+[Metrics, logs, or alerts to add]
+
+**Documentation Updates:**
+[README, guides, or AGENTS.md updates needed]
+
+This knowledge capture ensures our team learns from every issue and builds institutional knowledge over time.
+EOF
