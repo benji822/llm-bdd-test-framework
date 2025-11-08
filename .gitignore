@@ -43,3 +43,4 @@ logs/
 
 .chunkhound
 .chunkhound.json
+dist-unit
