@@ -22,7 +22,7 @@ test('runCiVerification succeeds with valid artifacts and produces bundle', asyn
   const normalizedDir = path.join(tempDir, 'normalized');
   const featuresDir = path.join(tempDir, 'features');
   const artifactsDir = path.join(tempDir, 'artifacts');
-  const selectorsPath = path.join(artifactsDir, 'selectors.json');
+  const selectorsPath = path.join(artifactsDir, 'selectors', 'registry.json');
   const vocabularyPath = path.join(artifactsDir, 'step-vocabulary.json');
   const reportPath = path.join(artifactsDir, 'validation-report.json');
   const ciReportPath = path.join(artifactsDir, 'ci-report.json');
@@ -31,6 +31,7 @@ test('runCiVerification succeeds with valid artifacts and produces bundle', asyn
   await fs.mkdir(normalizedDir, { recursive: true });
   await fs.mkdir(featuresDir, { recursive: true });
   await fs.mkdir(artifactsDir, { recursive: true });
+  await fs.mkdir(path.dirname(selectorsPath), { recursive: true });
 
   await fs.writeFile(
     path.join(normalizedDir, 'login.yaml'),
@@ -187,14 +188,14 @@ metadata:
 
   assert.ok(await pathExists(path.join(result.bundlePath, 'normalized', 'login.yaml')));
   assert.ok(await pathExists(path.join(result.bundlePath, 'features', 'login.feature')));
-  assert.ok(await pathExists(path.join(result.bundlePath, 'artifacts', 'selectors.json')));
+  assert.ok(await pathExists(path.join(result.bundlePath, 'artifacts', 'selectors', 'registry.json')));
 });
 
 test('runCiVerification detects secrets and returns dedicated exit code', async () => {
   const normalizedDir = path.join(tempDir, 'normalized');
   const featuresDir = path.join(tempDir, 'features');
   const artifactsDir = path.join(tempDir, 'artifacts');
-  const selectorsPath = path.join(artifactsDir, 'selectors.json');
+  const selectorsPath = path.join(artifactsDir, 'selectors', 'registry.json');
   const vocabularyPath = path.join(artifactsDir, 'step-vocabulary.json');
   const reportPath = path.join(artifactsDir, 'validation-report.json');
   const ciReportPath = path.join(artifactsDir, 'ci-report.json');
@@ -203,6 +204,7 @@ test('runCiVerification detects secrets and returns dedicated exit code', async 
   await fs.mkdir(normalizedDir, { recursive: true });
   await fs.mkdir(featuresDir, { recursive: true });
   await fs.mkdir(artifactsDir, { recursive: true });
+  await fs.mkdir(path.dirname(selectorsPath), { recursive: true });
 
   await fs.writeFile(
     path.join(normalizedDir, 'billing.yaml'),

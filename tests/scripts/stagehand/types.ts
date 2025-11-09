@@ -28,9 +28,9 @@ export interface ObserveAction {
 export interface StagehandRuntimeOptions {
   /** Enable caching of observations and actions */
   enableCache?: boolean;
-  /** Cache directory path */
+  /** Cache directory path (overrides default or STAGEHAND_CACHE_DIR) */
   cacheDir?: string;
-  /** Enable authoring mode (allow LLM calls in CI) */
+  /** Enable authoring mode (allow LLM calls in CI, can be set via AUTHORING_MODE env) */
   authoringMode?: boolean;
   /** Model to use (e.g., 'gpt-4o', 'claude-3-5-sonnet-latest') */
   model?: string;

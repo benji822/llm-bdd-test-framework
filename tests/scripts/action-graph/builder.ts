@@ -34,6 +34,21 @@ export class ActionGraphBuilder {
     return this;
   }
 
+  setFeatureName(name: string): this {
+    this.metadata.featureName = name;
+    return this;
+  }
+
+  setScenarioTags(tags: string[]): this {
+    if (tags.length === 0) {
+      delete this.metadata.scenarioTags;
+      return this;
+    }
+
+    this.metadata.scenarioTags = Array.from(new Set(tags));
+    return this;
+  }
+
   setAuthorship(authoringMode: boolean, authoredBy: 'llm' | 'manual' | 'hybrid'): this {
     this.metadata.authorship = { authoringMode, authoredBy };
     return this;
@@ -183,6 +198,8 @@ export function yamlToActionGraph(
   const builder = new ActionGraphBuilder()
     .setSpecId(yamlSpec.metadata.specId)
     .setScenarioName(scenario.name)
+    .setFeatureName(yamlSpec.feature)
+    .setScenarioTags(scenario.tags ?? [])
     .setAuthorship(authoringMode, authoredBy);
 
   const backgroundStepIds: string[] = [];

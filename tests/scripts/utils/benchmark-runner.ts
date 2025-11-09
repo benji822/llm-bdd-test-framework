@@ -48,7 +48,7 @@ export async function runPipelineBenchmark(): Promise<PipelineBenchmarkResult> {
     const clarificationsPath = path.join(tmp, 'clarifications/example-login.md');
     const normalizedPath = path.join(tmp, 'normalized/example-login.yaml');
     const featureDir = path.join(tmp, 'features');
-    const selectorsPath = path.join(tmp, 'artifacts/selectors.json');
+    const selectorsPath = path.join(tmp, 'artifacts', 'selectors', 'registry.json');
     const vocabularyPath = path.join(tmp, 'artifacts/step-vocabulary.json');
 
     await fs.mkdir(path.dirname(specPath), { recursive: true });
@@ -106,7 +106,7 @@ export async function runPipelineBenchmark(): Promise<PipelineBenchmarkResult> {
     });
     timers['spec:normalize'] = performance.now() - normalizeStart;
 
-    await fs.writeFile(selectorsPath, await fs.readFile(path.resolve('tests/artifacts/selectors.json'), 'utf8'));
+    await fs.writeFile(selectorsPath, await fs.readFile(path.resolve('tests/artifacts/selectors/registry.json'), 'utf8'));
     await fs.writeFile(vocabularyPath, await fs.readFile(path.resolve('tests/artifacts/step-vocabulary.json'), 'utf8'));
 
     const featureStart = performance.now();

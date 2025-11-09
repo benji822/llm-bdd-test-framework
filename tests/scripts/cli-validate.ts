@@ -8,12 +8,13 @@ import { validateSelectors } from './validate-selectors';
 import { logEvent } from './utils/logging';
 import { fileExists } from './utils/file-operations';
 import { scanFilesForSecrets } from './utils/secret-scanner';
+import { resolveRegistryPath } from './selector-registry';
 
 async function main(): Promise<void> {
   const normalizedDir = path.resolve('tests/normalized');
   const featuresDir = path.resolve('tests/features');
   const vocabularyPath = path.resolve('tests/artifacts/step-vocabulary.json');
-  const registryPath = path.resolve('tests/artifacts/selectors.json');
+  const registryPath = resolveRegistryPath();
   const reportPath = path.resolve('tests/artifacts/validation-report.json');
 
   const featurePaths = await findFiles(featuresDir, '.feature');

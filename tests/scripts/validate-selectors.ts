@@ -6,6 +6,7 @@ import type { SelectorRegistry, SelectorEntry } from './types/selector-registry'
 import { NormalizedYamlSchema, type NormalizedYaml } from './types/yaml-spec';
 import { parseYaml } from './utils/yaml-parser';
 import type { ValidationReport, ValidationIssue } from './types/validation-report';
+import { resolveRegistryPath, readSelectorRegistry } from './selector-registry';
 
 interface ValidateSelectorsOptions {
   normalizedDir: string;
@@ -14,7 +15,7 @@ interface ValidateSelectorsOptions {
   reportPath?: string;
 }
 
-const DEFAULT_REGISTRY_PATH = path.resolve('tests/artifacts/selectors.json');
+const DEFAULT_REGISTRY_PATH = resolveRegistryPath();
 const DEFAULT_REPORT_PATH = path.resolve('tests/artifacts/validation-report.json');
 
 export async function validateSelectors(options: ValidateSelectorsOptions): Promise<ValidationReport> {
@@ -60,8 +61,11 @@ export async function validateSelectors(options: ValidateSelectorsOptions): Prom
 }
 
 async function loadRegistry(registryPath: string): Promise<SelectorRegistry> {
-  const raw = await readTextFile(registryPath);
-  return JSON.parse(raw) as SelectorRegistry;
+  const registry = await readSelectorRegistry(registryPath);
+  if (!registry) {
+    throw new Error(`Selector registry not found at ${registryPath}`);
+  }
+  return registry;
 }
 
 async function findFiles(root: string, extension?: string): Promise<string[]> {

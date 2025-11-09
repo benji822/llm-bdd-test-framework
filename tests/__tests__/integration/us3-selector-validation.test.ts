@@ -43,7 +43,7 @@ metadata:
     'utf8',
   );
 
-  const registryPath = path.join(tempDir, 'selectors.json');
+  const registryPath = path.join(tempDir, 'selectors', 'registry.json');
   const reportPath = path.join(tempDir, 'artifacts/report.json');
 
   const extractedSelectors = new Map([

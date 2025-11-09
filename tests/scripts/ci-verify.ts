@@ -12,10 +12,11 @@ import type { ValidationIssue, ValidationReport, ValidationSummary } from './typ
 import { validateFeatureCoverage } from './validate-coverage';
 import { validateSelectors } from './validate-selectors';
 import { scanFilesForSecrets } from './utils/secret-scanner';
+import { resolveRegistryPath } from './selector-registry';
 
 const DEFAULT_NORMALIZED_DIR = path.resolve('tests/normalized');
 const DEFAULT_FEATURES_DIR = path.resolve('tests/features');
-const DEFAULT_SELECTORS_PATH = path.resolve('tests/artifacts/selectors.json');
+const DEFAULT_SELECTORS_PATH = resolveRegistryPath();
 const DEFAULT_VOCABULARY_PATH = path.resolve('tests/artifacts/step-vocabulary.json');
 const DEFAULT_SELECTOR_REPORT_PATH = path.resolve('tests/artifacts/validation-report.json');
 const DEFAULT_CI_REPORT_PATH = path.resolve('tests/artifacts/ci-report.json');
@@ -89,7 +90,7 @@ function resolveOptions(options: CiVerifyOptions): ResolvedCiVerifyOptions {
   return {
     normalizedDir: path.resolve(options.normalizedDir ?? DEFAULT_NORMALIZED_DIR),
     featuresDir: path.resolve(options.featuresDir ?? DEFAULT_FEATURES_DIR),
-    selectorsPath: path.resolve(options.selectorsPath ?? DEFAULT_SELECTORS_PATH),
+    selectorsPath: resolveRegistryPath(options.selectorsPath ?? DEFAULT_SELECTORS_PATH),
     vocabularyPath: path.resolve(options.vocabularyPath ?? DEFAULT_VOCABULARY_PATH),
     reportPath: path.resolve(options.reportPath ?? DEFAULT_SELECTOR_REPORT_PATH),
     ciReportPath: path.resolve(options.ciReportPath ?? DEFAULT_CI_REPORT_PATH),

@@ -5,6 +5,7 @@ import './utils/load-env';
 
 import { collectSelectors } from './collect-selectors';
 import { logEvent } from './utils/logging';
+import { resolveRegistryPath } from './selector-registry';
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -51,18 +52,19 @@ async function main(): Promise<void> {
   }
 
   const uniqueRoutes = routes.length > 0 ? Array.from(new Set(routes)) : undefined;
+  const resolvedOutputPath = resolveRegistryPath(outputPath);
 
   try {
     const registry = await collectSelectors({
       baseUrl,
       routes: uniqueRoutes,
-      outputPath,
+      outputPath: resolvedOutputPath,
     });
 
     logEvent('cli.collect-selectors.success', 'Selector collection completed', {
       baseUrl,
       total: Object.keys(registry.selectors).length,
-      outputPath: outputPath ?? 'tests/artifacts/selectors.json',
+      outputPath: resolvedOutputPath,
     });
     console.log(`Selector registry updated with ${Object.keys(registry.selectors).length} entries.`);
   } catch (error) {

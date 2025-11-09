@@ -30,8 +30,8 @@ export class StagehandWrapper {
     this.stagehand = stagehand;
     this.options = {
       enableCache: options.enableCache ?? true,
-      cacheDir: options.cacheDir ?? '.stagehand-cache',
-      authoringMode: options.authoringMode ?? false,
+      cacheDir: options.cacheDir ?? readCacheDirFromEnv() ?? '.stagehand-cache',
+      authoringMode: options.authoringMode ?? readAuthoringModeFromEnv() ?? false,
       model: options.model ?? 'gpt-4o',
       timeoutMs: options.timeoutMs ?? 30000,
     };
@@ -237,19 +237,48 @@ export class StagehandWrapper {
 
   private isCi(): boolean {
     return (
-      process.env.CI === 'true' ||
-      process.env.GITHUB_ACTIONS === 'true' ||
-      process.env.BUILDkite === 'true'
+      parseBooleanEnv(process.env.CI) === true ||
+      parseBooleanEnv(process.env.GITHUB_ACTIONS) === true ||
+      parseBooleanEnv(process.env.BUILDKITE) === true
     );
   }
 
   private ensureAuthoringAllowed(operation: 'observe' | 'act' | 'extract', instruction: string) {
     if (this.isCi() && !this.options.authoringMode) {
       throw new Error(
-        `Authoring disabled in CI for ${operation}. Enable authoringMode or provide cached result.\n  Instruction: ${instruction}`
+        `Authoring disabled in CI for ${operation}. Enable authoringMode (set AUTHORING_MODE=true) or provide cached result.\n  Instruction: ${instruction}`
       );
     }
   }
+}
+
+const TRUE_ENV_VALUES = new Set(['1', 'true', 'yes', 'on']);
+const FALSE_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
+
+function parseBooleanEnv(value?: string): boolean | undefined {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+  if (TRUE_ENV_VALUES.has(normalized)) {
+    return true;
+  }
+  if (FALSE_ENV_VALUES.has(normalized)) {
+    return false;
+  }
+  return undefined;
+}
+
+function readAuthoringModeFromEnv(): boolean | undefined {
+  return parseBooleanEnv(process.env.AUTHORING_MODE);
+}
+
+function readCacheDirFromEnv(): string | undefined {
+  const dir = process.env.STAGEHAND_CACHE_DIR?.trim();
+  return dir || undefined;
 }
 
 /**

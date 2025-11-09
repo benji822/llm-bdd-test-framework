@@ -18,10 +18,11 @@ afterEach(async () => {
 
 test('validateSelectors reports missing selectors with suggestions', async () => {
   const normalizedDir = path.join(tempDir, 'normalized');
-  const registryPath = path.join(tempDir, 'selectors.json');
+  const registryPath = path.join(tempDir, 'selectors', 'registry.json');
   const reportPath = path.join(tempDir, 'artifacts/report.json');
 
   await fs.mkdir(normalizedDir, { recursive: true });
+  await fs.mkdir(path.dirname(registryPath), { recursive: true });
   await fs.writeFile(
     path.join(normalizedDir, 'checkout.yaml'),
     `feature: Checkout
@@ -96,10 +97,11 @@ metadata:
 
 test('validateSelectors passes when all selectors exist', async () => {
   const normalizedDir = path.join(tempDir, 'normalized');
-  const registryPath = path.join(tempDir, 'selectors.json');
+  const registryPath = path.join(tempDir, 'selectors', 'registry.json');
   const reportPath = path.join(tempDir, 'artifacts/report.json');
 
   await fs.mkdir(normalizedDir, { recursive: true });
+  await fs.mkdir(path.dirname(registryPath), { recursive: true });
   await fs.writeFile(
     path.join(normalizedDir, 'profile.yaml'),
     `feature: Profile

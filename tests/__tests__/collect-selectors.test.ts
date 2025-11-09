@@ -22,7 +22,7 @@ afterEach(async () => {
 
 test('collectSelectors writes registry and prefers higher priority entries', async () => {
   const routes = ['/login', '/dashboard'];
-  const outputPath = path.join(tempDir, 'selectors.json');
+  const outputPath = path.join(tempDir, 'selectors', 'registry.json');
 
   const extractedByRoute = new Map<string, ExtractedSelector[]>([
     [
@@ -107,8 +107,9 @@ test('collectSelectors writes registry and prefers higher priority entries', asy
 });
 
 test('collectSelectors merges newly discovered selectors without dropping existing ones', async () => {
-  const outputPath = path.join(tempDir, 'selectors.json');
+  const outputPath = path.join(tempDir, 'selectors', 'registry.json');
 
+  await fs.mkdir(path.dirname(outputPath), { recursive: true });
   await fs.writeFile(
     outputPath,
     JSON.stringify(

@@ -1,8 +1,10 @@
-import path from 'node:path';
-
-import { ensureDir, writeTextFile, fileExists, readTextFile } from './utils/file-operations';
 import { logEvent } from './utils/logging';
 import type { SelectorEntry, SelectorRegistry } from './types/selector-registry';
+import {
+  resolveRegistryPath,
+  readSelectorRegistry,
+  writeSelectorRegistry,
+} from './selector-registry';
 
 type BrowserFactory = () => Promise<BrowserAdapter>;
 
@@ -27,41 +29,91 @@ interface ExtractedSelector {
 
 type ExtractSelectorsFn = (page: PageAdapter, route: string) => Promise<ExtractedSelector[]>;
 
-interface CollectSelectorsOptions {
+interface SelectorScanOptions {
   baseUrl: string;
   routes?: string[];
-  outputPath?: string;
   browserFactory?: BrowserFactory;
   extractSelectors?: ExtractSelectorsFn;
   now?: () => Date;
 }
 
+interface CollectSelectorsOptions extends SelectorScanOptions {
+  outputPath?: string;
+}
+
 const DEFAULT_ROUTES = ['/'];
-const DEFAULT_OUTPUT = path.resolve('tests/artifacts/selectors.json');
+const DEFAULT_OUTPUT = resolveRegistryPath();
 
 export async function collectSelectors(options: CollectSelectorsOptions): Promise<SelectorRegistry> {
   const {
     baseUrl,
+    routes,
+    outputPath,
+    browserFactory,
+    extractSelectors,
+    now,
+  } = options;
+  const resolvedOutputPath = resolveRegistryPath(outputPath ?? DEFAULT_OUTPUT);
+
+  let existing: SelectorRegistry | undefined;
+  try {
+    existing = await readSelectorRegistry(resolvedOutputPath);
+  } catch (error) {
+    console.warn(
+      `Failed to read existing selector registry at ${resolvedOutputPath}: ${(error as Error).message}`,
+    );
+  }
+
+  const scan = await scanSelectorRegistry({
+    baseUrl,
+    routes,
+    browserFactory,
+    extractSelectors,
+    now,
+  });
+
+  const selectors: Record<string, SelectorEntry> = { ...(existing?.selectors ?? {}) };
+
+  for (const [id, entry] of Object.entries(scan.selectors)) {
+    const existingEntry = selectors[id];
+    if (existingEntry && existingEntry.priority <= entry.priority) {
+      continue;
+    }
+    selectors[id] = {
+      ...entry,
+      stability: existingEntry?.stability ?? entry.stability ?? 'medium',
+    };
+  }
+
+  const registry: SelectorRegistry = {
+    version: scan.version,
+    lastScanned: scan.lastScanned,
+    selectors,
+  };
+
+  await writeSelectorRegistry(registry, resolvedOutputPath);
+
+  logEvent('selectors.collected', 'Selector registry updated', {
+    outputPath: resolvedOutputPath,
+    total: Object.keys(selectors).length,
+  });
+
+  return registry;
+}
+
+export async function scanSelectorRegistry(options: SelectorScanOptions): Promise<SelectorRegistry> {
+  const {
+    baseUrl,
     routes = DEFAULT_ROUTES,
-    outputPath = DEFAULT_OUTPUT,
     browserFactory = defaultBrowserFactory,
     extractSelectors = defaultExtractSelectors,
     now = () => new Date(),
   } = options;
 
-  let existing: SelectorRegistry | undefined;
-  if (await fileExists(outputPath)) {
-    try {
-      existing = JSON.parse(await readTextFile(outputPath)) as SelectorRegistry;
-    } catch {
-      existing = undefined;
-    }
-  }
-
   const browser = await browserFactory();
   const page = await browser.newPage();
 
-  const selectors: Record<string, SelectorEntry> = { ...(existing?.selectors ?? {}) };
+  const selectors: Record<string, SelectorEntry> = {};
   const timestamp = now().toISOString();
 
   try {
@@ -111,14 +163,6 @@ export async function collectSelectors(options: CollectSelectorsOptions): Promis
     lastScanned: timestamp,
     selectors,
   };
-
-  await ensureDir(path.dirname(outputPath));
-  await writeTextFile(outputPath, `${JSON.stringify(registry, null, 2)}\n`);
-
-  logEvent('selectors.collected', 'Selector registry updated', {
-    outputPath,
-    total: Object.keys(selectors).length,
-  });
 
   return registry;
 }
@@ -233,7 +277,13 @@ async function defaultExtractSelectors(page: PageAdapter, route: string): Promis
   });
 }
 
-export type { CollectSelectorsOptions, ExtractSelectorsFn, ExtractedSelector, BrowserFactory };
+export type {
+  CollectSelectorsOptions,
+  SelectorScanOptions,
+  ExtractSelectorsFn,
+  ExtractedSelector,
+  BrowserFactory,
+};
 
 function isConnectionRefused(error: unknown): boolean {
   if (!error || typeof error !== 'object') {

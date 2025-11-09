@@ -205,9 +205,11 @@ Every CLI in `package.json` wraps a module in `tests/scripts/`, so you can orche
 |-------|--------|-----------------|----------------|------------------|
 | Clarification | `generate-questions.ts` | `tests/scripts/cli-questions.ts` (`yarn spec:questions`) | Render prompts, call LLM, persist Q&A markdown. | `llm/`, prompt renderer, logging. |
 | Normalization | `normalize-yaml.ts` | `tests/scripts/cli-normalize.ts` (`yarn spec:normalize`, `yarn spec:normalize:batch`) | Convert spec + clarifications into schema-validated YAML with caching. | `llm/`, `utils/hash`, `utils/yaml-parser`, `types/yaml-spec`. |
-| Selector Hygiene | `collect-selectors.ts` | `tests/scripts/cli-collect-selectors.ts` (`yarn spec:collect-selectors`) | Crawl the running app and refresh `tests/artifacts/selectors.json`. | Playwright Chromium runner, `utils/file-operations`. |
+| Selector Hygiene | `collect-selectors.ts` | `tests/scripts/cli-collect-selectors.ts` (`yarn spec:collect-selectors`) | Crawl the running app and refresh `tests/artifacts/selectors/registry.json`. | Playwright Chromium runner, `utils/file-operations`. |
 | Optional Gate | `validate-and-fix-selectors.ts` | `tests/scripts/cli-validate-and-fix.ts` (`yarn spec:validate-and-fix`) | Validate selectors referenced in YAML, emit reports, optionally auto-fix. | Playwright, `types/yaml-spec`, logging. |
+| Drift Validation | `selector-drift.ts` | `tests/scripts/cli-selector-drift.ts` (`yarn spec:selector-drift`) | Compare live scans against the registry, emit drift reports, optionally apply updates. | `collect-selectors`, selector registry helpers. |
 | Feature Generation | `generate-features.ts` | `tests/scripts/cli-features.ts` (`yarn spec:features`) | Produce `.feature` files and enforce vocabulary coverage and lint rules. | `validate-coverage`, `gherkin-lint`, step vocabulary JSON. |
+| Graph Compilation | `action-graph/compiler.ts` | `tests/scripts/cli-compile-graph.ts` (`yarn spec:compile-graph`) | Convert deterministic action graphs into `.feature` files and localized step definitions. | `action-graph`, selector registry, `utils/file-operations`. |
 | Validation (offline) | `validate-selectors.ts`, `validate-coverage.ts` | `tests/scripts/cli-validate.ts` (`yarn spec:validate`) | Run selector and vocabulary checks without opening a browser. | `types/validation-report`, selector registry. |
 | CI Verification | `ci-verify.ts` | `tests/scripts/cli-ci-verify.ts` (`yarn spec:ci-verify`) | Aggregate schema, lint, coverage, selector, and secret checks; bundle artifacts. | `utils/secret-scanner`, logging, validation modules. |
 | Benchmarks | `benchmarks.ts` | `yarn spec:benchmarks` | Measure throughput across stages to catch performance regressions. | `utils/benchmark-runner`. |
@@ -248,7 +250,7 @@ Shared utilities live under `tests/scripts/utils/`, and Zod schemas under `tests
 | `tests/scripts/utils/` | Shared utilities (file I/O, hashing, prompt rendering, caching). |
 | `tests/scripts/types/` | Zod schemas and TypeScript typings for artifacts and reports. |
 | `tests/prompts/` | Prompt templates rendered before LLM calls. |
-| `tests/artifacts/` | Selector registry, vocabulary, validation reports, CI bundles, caches. |
+| `tests/artifacts/` | Selector registry (`selectors/registry.json`), drift reports (`selectors/drift-report.json`), vocabulary, validation reports, CI bundles, caches. |
 | `tests/config/` | Tool configuration such as `gherkinlint.json`. |
 | `tests/schemas/` & `tests/contracts/` | JSON schemas enforced across the pipeline. |
 | `tests/__tests__/` | Unit and integration coverage built on `node:test` with `tsx --test`. |
@@ -362,7 +364,7 @@ During execution the step implementation reads `process.env.E2E_USER_EMAIL`, ens
    `<input data-testid="email-input" />` → `email-input`
 4. **Fallback CSS** (`priority: 4`) only when unavoidable.
 
-Selector registry entries (`tests/artifacts/selectors.json`) follow:
+Selector registry entries (`tests/artifacts/selectors/registry.json`) follow:
 
 ```json
 {
@@ -379,7 +381,7 @@ Selector registry entries (`tests/artifacts/selectors.json`) follow:
 }
 ```
 
-`yarn spec:collect-selectors` refreshes the registry by crawling live routes with Playwright.
+`yarn spec:collect-selectors` refreshes the registry by crawling live routes with Playwright. Run `yarn spec:selector-drift --base-url <url>` to compare a fresh scan against the committed registry, emit `tests/artifacts/selectors/drift-report.json`, and optionally sync updates with `--apply`.
 
 ## Environment Variables
 
@@ -396,6 +398,8 @@ Selector registry entries (`tests/artifacts/selectors.json`) follow:
 | `LLM_MAX_TOKENS` | No | `3000` | Max tokens per LLM request. |
 | `LLM_TIMEOUT_MS` | No | `120000` | Timeout per LLM request in milliseconds. |
 | `LLM_CACHE` | No | `on` | Set to `off` to bypass local cache. |
+| `AUTHORING_MODE` | No | `false` | Set to `true` during local authoring sessions to allow live Stagehand/LLM calls; must remain `false`/unset in CI. |
+| `STAGEHAND_CACHE_DIR` | No | `.stagehand-cache` | Directory used by the Stagehand disk cache shared between authoring runs and CI verification. |
 
 ## Workflow Commands
 
@@ -434,6 +438,9 @@ yarn spec:normalize:batch tests/qa-specs tests/clarifications tests/normalized -
 # Collect selectors from the running application
 yarn spec:collect-selectors --route /login --route /dashboard
 
+# Compare live scan vs registry and emit drift report (add --apply to sync)
+yarn spec:selector-drift --base-url https://app.example.com --route /login --route /dashboard
+
 # Validate vocabulary coverage and selector usage (no browser)
 yarn spec:validate
 
@@ -449,6 +456,9 @@ yarn spec:ci-verify
 ```bash
 # Benchmark pipeline performance across stages
 yarn spec:benchmarks
+
+# Compile saved action graphs into deterministic features + step defs
+yarn spec:compile-graph tests/artifacts/graph/<spec>__scenario.json --feature-dir tests/features/compiled --steps-dir tests/steps/generated
 
 # Run Playwright tests
 yarn test
@@ -624,7 +634,7 @@ jobs:
 1. **Schema validation** for all YAML specs.
 2. **Gherkin linting** across generated `.feature` files.
 3. **Vocabulary coverage** checks.
-4. **Selector reconciliation** against `tests/artifacts/selectors.json`.
+4. **Selector reconciliation** against `tests/artifacts/selectors/registry.json`.
 5. **Secret scanning** to prevent credential leaks.
 6. **Artifact packaging** under `tests/artifacts/ci-bundle/`.
 
@@ -660,7 +670,7 @@ No LLM calls run in CI—only committed artifacts are validated.
 
 1. Ensure the application is running at `E2E_BASE_URL`.
 2. Recollect selectors: `yarn spec:collect-selectors --route /login`.
-3. Verify the selector exists in `tests/artifacts/selectors.json`.
+3. Verify the selector exists in `tests/artifacts/selectors/registry.json`.
 4. Add `data-testid` or ARIA attributes in the application if necessary.
 
 ### Step Pattern Not Covered by Vocabulary

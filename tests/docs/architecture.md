@@ -33,10 +33,11 @@ Every CLI command in `package.json` is a thin wrapper around a TypeScript module
 |-------|--------|-----------------|----------------|------------------|
 | Clarification | `generate-questions.ts` | `tests/scripts/cli-questions.ts` (`yarn spec:questions`) | Render prompt, call LLM provider, persist Q&A markdown. | `llm/`, `prompt-loader`, `logging`. |
 | Normalization | `normalize-yaml.ts` | `tests/scripts/cli-normalize.ts` (`yarn spec:normalize`, `yarn spec:normalize:batch`) | Convert spec + clarifications to normalized YAML, enforce schema, reuse cache when clarifications unchanged. | `llm/`, `utils/hash`, `utils/yaml-parser`, `types/yaml-spec`. |
-| Selector hygiene | `collect-selectors.ts` | `tests/scripts/cli-collect-selectors.ts` (`yarn spec:collect-selectors`) | Crawl running app with Playwright and refresh `tests/artifacts/selectors.json`. | Playwright Chromium adapter, `utils/file-operations`. |
+| Selector hygiene | `collect-selectors.ts` | `tests/scripts/cli-collect-selectors.ts` (`yarn spec:collect-selectors`) | Crawl running app with Playwright and refresh `tests/artifacts/selectors/registry.json`. | Playwright Chromium adapter, `utils/file-operations`. |
 | Optional pre-flight | `validate-and-fix-selectors.ts` | `tests/scripts/cli-validate-and-fix.ts` (`yarn spec:validate-and-fix`) | Validate selectors referenced in YAML against the live app, emit rich report, optionally auto-fix. | Playwright, `types/yaml-spec`, `utils/logging`. |
+| Drift validation | `selector-drift.ts` | `tests/scripts/cli-selector-drift.ts` (`yarn spec:selector-drift`) | Compare fresh scans against the registry, emit drift reports, optionally apply updates. | `collect-selectors.ts`, selector registry helpers. |
 | Feature generation | `generate-features.ts` | `tests/scripts/cli-features.ts` (`yarn spec:features`) | Produce `.feature` files, enforce vocabulary coverage, lint output. | `validate-coverage`, `gherkin-lint`, `step-vocabulary.json`. |
-| Validation (headless) | `validate-selectors.ts`, `validate-coverage.ts` | `tests/scripts/cli-validate.ts` (`yarn spec:validate`) | Offline validation that compares YAML/features against selector registry and vocabulary. | `types/validation-report`, `artifacts/selectors.json`. |
+| Validation (headless) | `validate-selectors.ts`, `validate-coverage.ts` | `tests/scripts/cli-validate.ts` (`yarn spec:validate`) | Offline validation that compares YAML/features against selector registry and vocabulary. | `types/validation-report`, `artifacts/selectors/registry.json`. |
 | CI verification | `ci-verify.ts` | `tests/scripts/cli-ci-verify.ts` (`yarn spec:ci-verify`) | Aggregate schema, lint, coverage, selector, and secret checks; package artifacts for CI. | `utils/secret-scanner`, `utils/logging`, `validate-*` modules. |
 | Benchmarks (optional) | `benchmarks.ts` | `yarn spec:benchmarks` | Measure throughput across stages to catch regressions. | `utils/benchmark-runner`. |
 
@@ -64,7 +65,8 @@ All CLI files live alongside their modules so the same code can be invoked withi
 | `tests/clarifications/` | Markdown Q&A emitted by `spec:questions`. |
 | `tests/normalized/` | Source of truth YAML documents. |
 | `tests/features/` | Generated `.feature` files consumed by Playwright BDD. |
-| `tests/artifacts/selectors.json` | Selector registry refreshed by `spec:collect-selectors`. |
+| `tests/artifacts/selectors/registry.json` | Selector registry refreshed by `spec:collect-selectors`. |
+| `tests/artifacts/selectors/drift-report.json` | Output from `spec:selector-drift` highlighting missing/updated selectors. |
 | `tests/artifacts/validation-report.json` | Output from selector validation. |
 | `tests/artifacts/ci-report.json` & `tests/artifacts/ci-bundle/` | Deterministic reports produced during CI verification. |
 | `tests/artifacts/step-vocabulary.json` | Approved step phrases used by coverage validator and feature generator. |
@@ -77,7 +79,7 @@ Artifacts are committed to Git for auditability and so CI can diff generated out
    Run `spec:questions`, answer clarifications, call `spec:normalize`, optionally gate with `spec:validate-and-fix`, then generate features via `spec:features`. At each step the CLI records structured logs to stdout for observability.
 
 2. **Validation loop (LLM-free)**  
-   `spec:collect-selectors` refreshes the registry from a running application. `spec:validate` provides fast feedback on selector drift or vocabulary gaps without invoking the LLM.
+   `spec:collect-selectors` refreshes the registry from a running application. `spec:selector-drift` compares live scans to the registry for suggested updates, and `spec:validate` provides fast feedback on selector or vocabulary gaps without invoking the LLM.
 
 3. **CI verification (deterministic)**  
    Pipelines call `spec:ci-verify`, which applies schema validation, gherkin-lint, coverage checks, selector reconciliation, and secret scanning. Exit codes are stable: schema (2), lint (3), coverage (4), selectors (5), secrets (6), timeout (7). The run bundles inputs/outputs for later inspection.

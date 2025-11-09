@@ -54,6 +54,17 @@
           "type": "string",
           "description": "Scenario name from YAML"
         },
+        "featureName": {
+          "type": "string",
+          "description": "Feature title from YAML"
+        },
+        "scenarioTags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Scenario tags preserved from YAML"
+        },
         "authorship": {
           "type": "object",
           "properties": {

@@ -20,7 +20,7 @@ test('CI verification reports coverage gaps without invoking LLM providers', asy
   const normalizedDir = path.join(tempDir, 'normalized');
   const featuresDir = path.join(tempDir, 'features');
   const artifactsDir = path.join(tempDir, 'artifacts');
-  const selectorsPath = path.join(artifactsDir, 'selectors.json');
+  const selectorsPath = path.join(artifactsDir, 'selectors', 'registry.json');
   const vocabularyPath = path.join(artifactsDir, 'step-vocabulary.json');
   const reportPath = path.join(artifactsDir, 'validation-report.json');
   const ciReportPath = path.join(artifactsDir, 'ci-report.json');
@@ -29,6 +29,7 @@ test('CI verification reports coverage gaps without invoking LLM providers', asy
   await fs.mkdir(normalizedDir, { recursive: true });
   await fs.mkdir(featuresDir, { recursive: true });
   await fs.mkdir(artifactsDir, { recursive: true });
+  await fs.mkdir(path.dirname(selectorsPath), { recursive: true });
 
   await fs.writeFile(
     path.join(normalizedDir, 'checkout.yaml'),

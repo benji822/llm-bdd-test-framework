@@ -1,6 +1,6 @@
 /*
   Focused unit tests for StagehandWrapper without real Playwright or Stagehand.
-  We rely on a local mock module resolved via NODE_PATH=tests/mocks/node_modules.
+  We rely on the local mock implementation under tests/mocks/ to avoid network calls.
 */
 import { strict as assert } from 'node:assert';
 import { mkdirSync, rmSync, existsSync } from 'node:fs';
@@ -13,7 +13,14 @@ const fakePage: any = { url: () => 'http://localhost/' };
 
 // Pull mocked Stagehand from our local stub
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { Stagehand } = require('@browserbasehq/stagehand');
+const { Stagehand } = require(join(
+  process.cwd(),
+  'tests',
+  'mocks',
+  'node_modules',
+  '@browserbasehq',
+  'stagehand'
+));
 
 function tmpCacheDir(name: string) {
   const p = join(process.cwd(), 'tests', 'tmp', name);
@@ -21,6 +28,14 @@ function tmpCacheDir(name: string) {
     mkdirSync(p, { recursive: true });
   }
   return p;
+}
+
+function restoreEnv(key: string, previous: string | undefined) {
+  if (previous === undefined) {
+    delete process.env[key];
+  } else {
+    process.env[key] = previous;
+  }
 }
 
 async function run() {
@@ -83,23 +98,25 @@ async function run() {
     const prev = process.env.CI;
     process.env.CI = 'true';
     const cacheDir = tmpCacheDir('ci-guard');
-    const wrapper = new StagehandWrapper(fakePage, new Stagehand(), {
-      enableCache: true,
-      cacheDir,
-      authoringMode: false,
-    });
-
-    let threw = false;
     try {
-      await wrapper.observe('uncached call should fail in CI');
-    } catch (e) {
-      threw = true;
-      assert.match(String(e), /Authoring disabled in CI/);
-    }
-    assert.equal(threw, true, 'CI guard must throw on cache miss');
+      const wrapper = new StagehandWrapper(fakePage, new Stagehand(), {
+        enableCache: true,
+        cacheDir,
+        authoringMode: false,
+      });
 
-    process.env.CI = prev;
-    rmSync(cacheDir, { recursive: true, force: true });
+      let threw = false;
+      try {
+        await wrapper.observe('uncached call should fail in CI');
+      } catch (e) {
+        threw = true;
+        assert.match(String(e), /Authoring disabled in CI/);
+      }
+      assert.equal(threw, true, 'CI guard must throw on cache miss');
+    } finally {
+      restoreEnv('CI', prev);
+      rmSync(cacheDir, { recursive: true, force: true });
+    }
   }
 
   // 5) With authoringMode=true in CI, uncached calls are allowed
@@ -107,17 +124,47 @@ async function run() {
     const prev = process.env.CI;
     process.env.CI = 'true';
     const cacheDir = tmpCacheDir('ci-authoring');
-    const wrapper = new StagehandWrapper(fakePage, new Stagehand(), {
-      enableCache: true,
-      cacheDir,
-      authoringMode: true,
-    });
+    try {
+      const wrapper = new StagehandWrapper(fakePage, new Stagehand(), {
+        enableCache: true,
+        cacheDir,
+        authoringMode: true,
+      });
 
-    const actions = await wrapper.observe('allowed in CI with authoringMode');
-    assert.ok(actions.length > 0, 'actions returned');
+      const actions = await wrapper.observe('allowed in CI with authoringMode');
+      assert.ok(actions.length > 0, 'actions returned');
+    } finally {
+      restoreEnv('CI', prev);
+      rmSync(cacheDir, { recursive: true, force: true });
+    }
+  }
 
-    process.env.CI = prev;
-    rmSync(cacheDir, { recursive: true, force: true });
+  // 6) Env vars drive cache dir + CI authoring defaults
+  {
+    const prevCi = process.env.CI;
+    const prevAuthoring = process.env.AUTHORING_MODE;
+    const prevCacheDir = process.env.STAGEHAND_CACHE_DIR;
+
+    process.env.CI = 'true';
+    process.env.AUTHORING_MODE = 'true';
+    const envCacheDir = tmpCacheDir('env-cache');
+    process.env.STAGEHAND_CACHE_DIR = envCacheDir;
+    try {
+      const wrapper = new StagehandWrapper(fakePage, new Stagehand(), {
+        enableCache: true,
+      });
+
+      const stats = wrapper.getCacheStats();
+      assert.equal(stats.cacheDir, envCacheDir, 'env cache dir applied');
+
+      const actions = await wrapper.observe('env toggled CI call');
+      assert.ok(actions.length > 0, 'AUTHORING_MODE env allows CI call');
+    } finally {
+      rmSync(envCacheDir, { recursive: true, force: true });
+      restoreEnv('STAGEHAND_CACHE_DIR', prevCacheDir);
+      restoreEnv('AUTHORING_MODE', prevAuthoring);
+      restoreEnv('CI', prevCi);
+    }
   }
 }
 
@@ -131,4 +178,3 @@ run()
     console.error(err);
     process.exit(1);
   });
-

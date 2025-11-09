@@ -1,6 +1,6 @@
 # Selector Best Practices
 
-Reliable selectors keep the generated BDD tests stable and accessible. The selector registry (`tests/artifacts/selectors.json`) is refreshed nightly via Playwright scanning.
+Reliable selectors keep the generated BDD tests stable and accessible. The selector registry (`tests/artifacts/selectors/registry.json`) is refreshed nightly via Playwright scanning, and `yarn spec:selector-drift` highlights any divergence in `tests/artifacts/selectors/drift-report.json`.
 
 ## Priority Ladder
 
@@ -36,6 +36,7 @@ Reliable selectors keep the generated BDD tests stable and accessible. The selec
 - `collect-selectors.ts` deduplicates by ID, preferring higher-priority entries.
 - The nightly workflow stores last-seen timestamps; remove selectors that go stale for >30 days.
 - Review `accessible: false` entries to see if the application can expose a better alternative.
+- `yarn spec:selector-drift --base-url <url> [--apply]` compares live scans to the committed registry so you can spot missing or updated selectors before they break scenarios.
 
 ## Validating Selectors
 
@@ -46,8 +47,9 @@ Reliable selectors keep the generated BDD tests stable and accessible. The selec
 
 1. Update the application markup to include ARIA roles/labels or `data-testid`.
 2. Run `yarn spec:collect-selectors --route <path>` locally (ensure `E2E_BASE_URL` is set).
-3. Commit the updated `tests/artifacts/selectors.json`.
-4. Re-run `yarn spec:validate` to confirm there are no mismatches.
+3. Inspect `yarn spec:selector-drift --base-url <url> --route <path>` (add `--apply` to sync high-confidence fixes) and review `tests/artifacts/selectors/drift-report.json`.
+4. Commit the updated `tests/artifacts/selectors/registry.json`.
+5. Re-run `yarn spec:validate` to confirm there are no mismatches.
 
 ## Troubleshooting
 

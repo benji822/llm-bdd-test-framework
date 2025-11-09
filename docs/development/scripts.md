@@ -49,6 +49,7 @@ Example: "Use Oracle to review this pipeline architecture for performance and ma
 | Normalization | `normalize-yaml.ts` | `yarn spec:normalize` | Convert spec + clarifications into schema-validated YAML |
 | Validation | `validate-and-fix-selectors.ts` | `yarn spec:validate-and-fix` | Validate selectors against live app, emit reports |
 | Features | `generate-features.ts` | `yarn spec:features` | Produce `.feature` files with vocabulary coverage |
+| Graph compile | `action-graph/compiler.ts` | `yarn spec:compile-graph` | Convert action graphs into `.feature` + deterministic step defs |
 | CI Verify | `ci-verify.ts` | `yarn spec:ci-verify` | Aggregate validation checks, bundle artifacts |
 
 ## LLM Provider Abstraction

@@ -48,7 +48,7 @@ test('Secret scanning passes for committed artifacts', async () => {
   const files = [
     path.resolve('tests/normalized/example-login.yaml'),
     path.resolve('tests/features/example-login.feature'),
-    path.resolve('tests/artifacts/selectors.json'),
+    path.resolve('tests/artifacts/selectors/registry.json'),
   ];
   const issues = await scanFilesForSecrets({ files });
   assert.equal(issues.length, 0, `Secret scan found ${issues.length} issues`);

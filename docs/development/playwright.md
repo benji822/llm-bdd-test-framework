@@ -177,7 +177,8 @@ Update selector registry and step implementations."
 ## Common Issues
 
 ### Element Not Found
-- Check selector registry: `tests/artifacts/selectors.json`
+- Check selector registry: `tests/artifacts/selectors/registry.json`
+- Run a drift scan for suggestions: `yarn spec:selector-drift --base-url $E2E_BASE_URL --route /page`
 - Recollect selectors: `yarn spec:collect-selectors --route /page`
 - Verify app is running at `E2E_BASE_URL`
 

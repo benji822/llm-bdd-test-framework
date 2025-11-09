@@ -58,7 +58,7 @@ test('pipeline generates artifacts and passes CI verification using stubbed prov
   const featureDir = path.join(tempDir, 'features');
   const featurePath = path.join(featureDir, 'customer-login.feature');
   const vocabularyPath = path.join(tempDir, 'artifacts/step-vocabulary.json');
-  const selectorsPath = path.join(tempDir, 'artifacts/selectors.json');
+  const selectorsPath = path.join(tempDir, 'artifacts', 'selectors', 'registry.json');
   const reportPath = path.join(tempDir, 'artifacts/validation-report.json');
 
   await fs.mkdir(path.dirname(specPath), { recursive: true });
@@ -66,6 +66,7 @@ test('pipeline generates artifacts and passes CI verification using stubbed prov
   await fs.mkdir(path.dirname(normalizedPath), { recursive: true });
   await fs.mkdir(featureDir, { recursive: true });
   await fs.mkdir(path.dirname(vocabularyPath), { recursive: true });
+  await fs.mkdir(path.dirname(selectorsPath), { recursive: true });
 
   const specContent = `Feature: Customer login
 

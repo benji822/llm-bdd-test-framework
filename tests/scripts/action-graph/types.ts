@@ -90,6 +90,8 @@ export interface GraphMetadata {
   updatedAt?: string;
   specId: string;
   scenarioName: string;
+  featureName?: string;
+  scenarioTags?: string[];
   authorship?: GraphAuthorship;
 }
 
