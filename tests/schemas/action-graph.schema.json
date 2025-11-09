@@ -1,0 +1,323 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://llm-bdd.test/schemas/action-graph.schema.json",
+  "title": "Action Graph",
+  "description": "Deterministic execution state graph representing test actions and dependencies",
+  "type": "object",
+  "required": ["graphId", "version", "nodes", "edges", "metadata"],
+  "properties": {
+    "graphId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this action graph"
+    },
+    "version": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "Schema version for backward compatibility"
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/actionNode"
+      },
+      "description": "Action nodes representing individual steps"
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/edge"
+      },
+      "description": "Directed edges representing control flow dependencies"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["createdAt", "specId", "scenarioName"],
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of graph creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last update timestamp"
+        },
+        "specId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Reference to source specification"
+        },
+        "scenarioName": {
+          "type": "string",
+          "description": "Scenario name from YAML"
+        },
+        "authorship": {
+          "type": "object",
+          "properties": {
+            "authoringMode": {
+              "type": "boolean",
+              "description": "True if generated in authoring mode (LLM enabled)"
+            },
+            "authoredBy": {
+              "type": "string",
+              "enum": ["llm", "manual", "hybrid"],
+              "description": "Source of action authoring"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "actionNode": {
+      "type": "object",
+      "required": ["nodeId", "type", "stepIndex"],
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Unique node identifier within graph"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["navigate", "observe", "act", "extract", "assert", "setup", "teardown"],
+          "description": "Action node type"
+        },
+        "stepIndex": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Position in scenario execution order"
+        },
+        "gherkinStep": {
+          "type": "object",
+          "properties": {
+            "keyword": {
+              "type": "string",
+              "enum": ["given", "when", "then", "and", "but"]
+            },
+            "text": {
+              "type": "string",
+              "description": "Original Gherkin step text"
+            }
+          }
+        },
+        "instructions": {
+          "type": "object",
+          "properties": {
+            "natural": {
+              "type": "string",
+              "description": "Natural language instruction for action"
+            },
+            "deterministic": {
+              "type": "object",
+              "description": "Deterministic equivalent (selectors, values)",
+              "properties": {
+                "selector": {
+                  "type": "string",
+                  "description": "CSS/Playwright selector ID"
+                },
+                "action": {
+                  "type": "string",
+                  "enum": ["click", "fill", "select", "navigate", "wait", "check"]
+                },
+                "value": {
+                  "description": "Action payload (filled text, URL, etc.)"
+                }
+              }
+            }
+          }
+        },
+        "selectors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Selector identifier from registry"
+              },
+              "locator": {
+                "type": "string",
+                "description": "Playwright locator expression"
+              },
+              "verified": {
+                "type": "boolean",
+                "description": "Whether selector has been validated on live page"
+              }
+            }
+          }
+        },
+        "execution": {
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": ["pending", "running", "success", "failed", "skipped"],
+              "description": "Current execution state"
+            },
+            "startedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "completedAt": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "duration": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Execution duration in milliseconds"
+            },
+            "cached": {
+              "type": "boolean",
+              "description": "Whether result was retrieved from cache"
+            },
+            "cacheKey": {
+              "type": "string",
+              "description": "Cache key for deterministic matching"
+            },
+            "error": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "stack": {
+                  "type": "string"
+                }
+              }
+            },
+            "result": {
+              "description": "Action result (extracted data, assertion outcome, etc.)"
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "retries": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "timeout": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Timeout in milliseconds"
+            },
+            "critical": {
+              "type": "boolean",
+              "description": "If true, failure stops scenario execution"
+            },
+            "testData": {
+              "type": "object",
+              "description": "Step-level test data bindings resolved ahead of execution"
+            }
+          }
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["from", "to"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Source node ID"
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "description": "Target node ID"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["sequential", "conditional", "parallel"],
+          "default": "sequential",
+          "description": "Dependency type"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Optional condition for conditional edges"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "graphId": "550e8400-e29b-41d4-a716-446655440000",
+      "version": "1.0",
+      "nodes": [
+        {
+          "nodeId": "step_0",
+          "type": "navigate",
+          "stepIndex": 0,
+          "gherkinStep": {
+            "keyword": "given",
+            "text": "I am on the login page"
+          },
+          "instructions": {
+            "natural": "Navigate to the login page",
+            "deterministic": {
+              "action": "navigate",
+              "value": "/login"
+            }
+          },
+          "execution": {
+            "state": "pending"
+          }
+        },
+        {
+          "nodeId": "step_1",
+          "type": "act",
+          "stepIndex": 1,
+          "gherkinStep": {
+            "keyword": "when",
+            "text": "I enter email as \"test@example.com\""
+          },
+          "instructions": {
+            "natural": "Fill email field with test@example.com",
+            "deterministic": {
+              "selector": "email-input",
+              "action": "fill",
+              "value": "test@example.com"
+            }
+          },
+          "selectors": [
+            {
+              "id": "email-input",
+              "locator": "input[data-testid='email']",
+              "verified": false
+            }
+          ],
+          "execution": {
+            "state": "pending"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "from": "step_0",
+          "to": "step_1",
+          "type": "sequential"
+        }
+      ],
+      "metadata": {
+        "createdAt": "2025-11-09T15:10:00Z",
+        "specId": "550e8400-e29b-41d4-a716-446655440000",
+        "scenarioName": "Successful login with valid credentials",
+        "authorship": {
+          "authoringMode": true,
+          "authoredBy": "llm"
+        }
+      }
+    }
+  ]
+}

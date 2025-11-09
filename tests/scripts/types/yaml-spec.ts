@@ -20,12 +20,16 @@ export const ScenarioSchema = z.object({
 });
 export type NormalizedScenario = z.infer<typeof ScenarioSchema>;
 
+const AuthorshipSourceEnum = z.enum(['llm', 'manual', 'hybrid']);
+
 export const MetadataSchema = z.object({
   specId: z.string().uuid(),
   generatedAt: z.string().datetime(),
   llmProvider: z.string().min(1),
   llmModel: z.string().min(1),
   clarificationsHash: z.string().optional(),
+  authoringMode: z.boolean().optional(),
+  authoredBy: AuthorshipSourceEnum.optional(),
 });
 export type NormalizedMetadata = z.infer<typeof MetadataSchema>;
 

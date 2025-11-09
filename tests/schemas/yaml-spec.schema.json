@@ -99,6 +99,15 @@
         "clarificationsHash": {
           "type": "string",
           "description": "SHA-256 hash of clarifications content for change detection"
+        },
+        "authoringMode": {
+          "type": "boolean",
+          "description": "True when the YAML was generated during an authoring session (LLM access allowed)"
+        },
+        "authoredBy": {
+          "type": "string",
+          "enum": ["llm", "manual", "hybrid"],
+          "description": "Indicates whether the content originated from an LLM, a human, or a hybrid flow"
         }
       }
     }
