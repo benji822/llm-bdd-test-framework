@@ -5,9 +5,31 @@ import { StagehandCache } from './cache';
 import {
   ActionMetadata,
   ObserveAction,
+  StagehandActionDescriptor,
+  StagehandActResult,
   StagehandRuntimeOptions,
   StagehandPage,
 } from './types';
+
+interface StagehandActCacheEntry {
+  success?: boolean;
+  actionDescription?: string;
+  message?: string;
+  actions?: StagehandActionDescriptor[];
+}
+
+function normalizeStagehandActions(actions?: StagehandActionDescriptor[]): StagehandActionDescriptor[] {
+  if (!Array.isArray(actions)) {
+    return [];
+  }
+
+  return actions.map((action) => ({
+    selector: action.selector,
+    description: action.description,
+    method: action.method,
+    arguments: action.arguments ? [...action.arguments] : undefined,
+  }));
+}
 
 /**
  * Stagehand runtime wrapper over Playwright page
@@ -90,7 +112,7 @@ export class StagehandWrapper {
    *
    * Returns metadata for auditing and determinism tracking.
    */
-  async act(instruction: string): Promise<ActionMetadata> {
+  async act(instruction: string): Promise<StagehandActResult> {
     const actionId = this.generateActionId();
     const startTime = Date.now();
     const cacheKey = this.cache.generateKey(`act:${instruction}`);
@@ -102,30 +124,61 @@ export class StagehandWrapper {
       cached: false,
     };
 
-    try {
-      // Check cache first
-      if (this.options.enableCache && this.cache.has(cacheKey)) {
-        metadata.cached = true;
-        metadata.cacheKey = cacheKey;
-        metadata.duration = Date.now() - startTime;
-        return metadata;
-      }
+    const cachePayload = this.options.enableCache
+      ? (this.cache.get(cacheKey) as StagehandActCacheEntry | null)
+      : null;
 
-      // Not cached: enforce authoring policy
+    if (cachePayload) {
+      metadata.cached = true;
+      metadata.duration = Date.now() - startTime;
+      metadata.cacheKey = cacheKey;
+
+      return {
+        metadata,
+        instruction,
+        actions: cachePayload.actions ?? [],
+        message: cachePayload.message,
+        raw: {
+          success: cachePayload.success,
+          actionDescription: cachePayload.actionDescription,
+          message: cachePayload.message,
+        },
+      };
+    }
+
+    try {
       this.ensureAuthoringAllowed('act', instruction);
 
-      // Execute via Stagehand
-      await this.stagehand.act(instruction);
+      const result = await this.stagehand.act(instruction, {
+        timeout: this.options.timeoutMs,
+      });
 
       metadata.duration = Date.now() - startTime;
       metadata.cacheKey = cacheKey;
 
-      // Store in cache for future runs
+      const normalizedActions = normalizeStagehandActions(result.actions);
+
       if (this.options.enableCache) {
-        this.cache.set(cacheKey, { success: true }, instruction);
+        this.cache.set(cacheKey, {
+          success: result.success,
+          actionDescription: result.actionDescription,
+          message: result.message,
+          actions: normalizedActions,
+        }, instruction);
       }
 
-      return metadata;
+      // Store in cache for future runs
+      return {
+        metadata,
+        instruction,
+        actions: normalizedActions,
+        message: result.message,
+        raw: {
+          success: result.success,
+          actionDescription: result.actionDescription,
+          message: result.message,
+        },
+      };
     } catch (error) {
       metadata.duration = Date.now() - startTime;
       metadata.error = error instanceof Error ? error.message : String(error);

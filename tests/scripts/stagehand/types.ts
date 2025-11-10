@@ -13,6 +13,25 @@ export interface ActionMetadata {
   error?: string;
 }
 
+export interface StagehandActionDescriptor {
+  selector?: string;
+  description?: string;
+  method?: string;
+  arguments?: string[];
+}
+
+export interface StagehandActResult {
+  metadata: ActionMetadata;
+  instruction: string;
+  actions: StagehandActionDescriptor[];
+  message?: string;
+  raw?: {
+    success?: boolean;
+    actionDescription?: string;
+    message?: string;
+  };
+}
+
 /**
  * Result from observe() call
  */
@@ -50,7 +69,7 @@ export interface StagehandPage extends Page {
   /**
    * Execute a natural language action
    */
-  act(instruction: string): Promise<ActionMetadata>;
+  act(instruction: string): Promise<StagehandActResult>;
 
   /**
    * Extract structured data using a Zod schema

@@ -114,55 +114,36 @@ Invalid credentials:
 ### Generate Tests
 
 ```bash
-# 1. Generate clarification questions (LLM)
-yarn spec:questions tests/qa-specs/login.txt
-
-# 2. Answer questions in tests/clarifications/login.md
-
-# 3. Normalize to YAML (LLM + schema validation)
-yarn spec:normalize tests/qa-specs/login.txt tests/clarifications/login.md
-
-# 4. (Optional) Validate selectors against the running app before feature generation
-yarn spec:validate-and-fix tests/normalized/login.yaml
-
-# 5. Generate Gherkin features
-yarn spec:features tests/normalized/login.yaml
-
-# 6. Run the Playwright suite
-yarn test
+yarn bdd record tests/qa-specs/example-login.txt \
+  --scenario "Happy path" \
+  --graph-dir tests/artifacts/graph \
+  --feature-dir tests/features/compiled \
+  --steps-dir tests/steps/generated
 ```
+
+The Stagehand-first `bdd record` command walks natural-language specs through Stagehand, persists versioned action graphs to `tests/artifacts/graph/`, and compiles deterministic `.feature`/`.steps.ts` outputs. Add `--dry-run` to validate authoring without writing files, `--skip-compile` to stop after the graph is stored, and `--base-url` to supply a fallback navigation target.
+
+> **Optional legacy pipeline:** if you still need clarification questions → normalization, the older flow (`yarn spec:questions`, `yarn spec:normalize`, `yarn spec:features`) is described in the Workflow Commands section below.
 
 ## Best Practices
 
-- Keep specs small—one feature area per file (< 1 KB).
-- Use batch normalization for multiple specs to maximize caching benefits.
-- Commit generated YAML and feature files for deterministic CI execution.
-- Answer all required clarification questions before normalization.
-- Start with TODO selectors, then resolve them with `yarn spec:validate-and-fix`.
-- Run the full pipeline locally before pushing to catch regressions early.
+- Keep specs small—one feature area per file (< 1 KB) so Stagehand stays focused.
+- Prefer the Stagehand-first command (`yarn bdd record …`) for new specs; it skips clarifications while still creating deterministic artifacts.
+- Commit generated `.feature` and `.steps.ts` files so CI can verify without authoring-time LLM calls.
+- Use the clarification/normalization flow only if you need human-reviewed YAML or extra metadata.
+- Start with TODO selectors, then resolve them with `yarn spec:validate-and-fix` before compiling.
+- Run `yarn bdd record` locally (with `--dry-run` if needed) before falling back to CI to confirm the graph → feature loop remains stable.
 
 ## Pipeline Overview
 
 ```
-Plain Text Spec ──┐
-                  │  yarn spec:questions         ┌─────────────────────┐
-                  ├─> Clarification Markdown ───►│ generate-questions  │
-                  │                              └─────────────────────┘
-                  │  yarn spec:normalize         ┌─────────────────────┐
-                  ├─> Normalized YAML ──────────►│ normalize-yaml      │
-Selector Registry │                              └─────────────────────┘
-                  │  yarn spec:validate-and-fix  ┌─────────────────────┐
-(Optional Gate)   ├─> Selector Validation ──────►│ validate-and-fix    │
-                  │                              └─────────────────────┘
-                  │  yarn spec:features          ┌─────────────────────┐
-Step Vocabulary   ├─> Gherkin Features ─────────►│ generate-features   │
-                  │                              └─────────────────────┘
-                  │  yarn spec:ci-verify         ┌─────────────────────┐
-                  └─> CI Verification ─────────►│ ci-verify            │
-                                                 └─────────────────────┘
+Plain Text Spec ──────────► yarn bdd record ──────────► Stagehand action graph ──────────► compile (features + steps) ──────────► Playwright execution
+
+Optional (LLM-backed):
+Plain Text Spec ──► yarn spec:questions ──► clarifications ──► yarn spec:normalize ──► normalized YAML ──► yarn spec:features ──► Playwright execution
 ```
 
-Every CLI in `package.json` wraps a module in `tests/scripts/`, so you can orchestrate stages programmatically if needed. For a deep dive into stage wiring, see `tests/docs/architecture.md`.
+All CLI commands live in `tests/scripts/`, so the same modules can be invoked manually or via scripting. See `tests/docs/architecture.md` for a deeper architecture walkthrough.
 
 ## Performance Optimizations
 
@@ -408,7 +389,15 @@ Selector registry entries (`tests/artifacts/selectors/registry.json`) follow:
 
 ## Workflow Commands
 
-### Single Spec Processing
+### Stagehand-first authoring (recommended)
+
+```bash
+yarn bdd record <specPath> [--scenario <name>] [--graph-dir <dir>] [--feature-dir <dir>] [--steps-dir <dir>] [--base-url <url>] [--dry-run] [--skip-compile]
+```
+
+This command parses the plain-text spec, lets Stagehand execute each step, stores the resulting action graph, and compiles deterministic features and step defs. Skip compilation (`--skip-compile`), run a dry run (`--dry-run`), or override the base URL as needed.
+
+### Optional: Legacy LLM-driven pipeline
 
 ```bash
 # Generate clarification questions

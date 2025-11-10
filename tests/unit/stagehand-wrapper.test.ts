@@ -66,13 +66,15 @@ async function run() {
       cacheDir,
       authoringMode: true,
     });
-    const meta1 = await wrapper.act('click Login');
-    assert.equal(meta1.cached, false, 'first act is not cached');
-    assert.ok(meta1.id && meta1.timestamp, 'act returns metadata');
+    const result1 = await wrapper.act('click Login');
+    assert.equal(result1.metadata.cached, false, 'first act is not cached');
+    assert.ok(result1.metadata.id && result1.metadata.timestamp, 'act returns metadata');
+    assert.ok(result1.actions.length > 0, 'act returns action descriptors');
 
-    const meta2 = await wrapper.act('click Login');
-    assert.equal(meta2.cached, true, 'second act is cached');
-    assert.ok(meta2.cacheKey, 'cached act has cacheKey');
+    const result2 = await wrapper.act('click Login');
+    assert.equal(result2.metadata.cached, true, 'second act is cached');
+    assert.ok(result2.metadata.cacheKey, 'cached act has cacheKey');
+    assert.deepEqual(result2.actions, result1.actions, 'cached actions match original');
 
     rmSync(cacheDir, { recursive: true, force: true });
   }

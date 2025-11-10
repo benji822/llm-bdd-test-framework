@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import process from 'node:process';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import './utils/load-env';
 
@@ -9,10 +8,9 @@ import { parseYaml } from './utils/yaml-parser.js';
 import { readTextFile } from './utils/file-operations.js';
 import { NormalizedYamlSchema } from './types/yaml-spec.js';
 import { readSelectorRegistry } from './selector-registry.js';
-import { StagehandWrapper } from './stagehand/wrapper.js';
+import { createAuthoringStagehandWrapper } from './stagehand/bootstrap.js';
 import {
   buildPlaceholderDefaults,
-  createStubPage,
   recordScenarioToGraph,
 } from './stagehand/recorder.js';
 import { GraphPersistence } from './action-graph/index.js';
@@ -35,7 +33,7 @@ async function main(): Promise<void> {
     const registry = await readSelectorRegistry();
     const placeholderValues = buildPlaceholderDefaults();
 
-    const stagehand = await createStagehandWrapper();
+    const stagehand = await createAuthoringStagehandWrapper();
     const baseUrl = process.env.E2E_BASE_URL ?? 'http://localhost:4200';
     const recording = await recordScenarioToGraph({
       yaml,
@@ -130,30 +128,6 @@ async function loadYaml(filePath: string) {
   const contents = await readTextFile(path.resolve(filePath));
   const parsed = parseYaml(contents);
   return NormalizedYamlSchema.parse(parsed);
-}
-
-async function createStagehandWrapper(): Promise<StagehandWrapper> {
-  let StagehandCtor: new () => unknown;
-  const mockPath = path.join(process.cwd(), 'tests', 'mocks', 'node_modules', '@browserbasehq', 'stagehand', 'index.js');
-  try {
-    const mockModule = await import(pathToFileURL(mockPath).href);
-    if (mockModule && 'Stagehand' in mockModule) {
-      StagehandCtor = (mockModule as { Stagehand: new () => unknown }).Stagehand;
-    } else {
-      throw new Error('mock Stagehand missing');
-    }
-  } catch {
-    const realModule = await import('@browserbasehq/stagehand');
-    StagehandCtor = (realModule as { Stagehand: new () => unknown }).Stagehand;
-  }
-  const cacheDir = process.env.STAGEHAND_CACHE_DIR ?? path.resolve('tests/tmp/stagehand-cache');
-  process.env.AUTHORING_MODE = process.env.AUTHORING_MODE ?? 'true';
-  const page = createStubPage();
-  return new StagehandWrapper(page, new StagehandCtor(), {
-    authoringMode: true,
-    enableCache: true,
-    cacheDir,
-  });
 }
 
 function printSummary(params: {

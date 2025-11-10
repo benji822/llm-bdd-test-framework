@@ -1,4 +1,3 @@
-import type { Page } from '@playwright/test';
 import type { ActionGraph } from '../action-graph/types.js';
 import {
   ActionGraphBuilder,
@@ -9,6 +8,7 @@ import type {
   GherkinKeyword,
 } from '../action-graph/types.js';
 import type { StagehandWrapper } from './wrapper.js';
+import type { StagehandActionDescriptor } from './types.js';
 import type { NormalizedYaml, NormalizedScenario, NormalizedStep } from '../types/yaml-spec.js';
 import type { SelectorRegistry } from '../types/selector-registry.js';
 
@@ -38,7 +38,12 @@ interface RecordingExecution {
 
 export interface ScenarioRecordingResult {
   graph: ActionGraph;
-  recordedSteps: Array<{ nodeId: string; instruction: string; execution: RecordingExecution }>;
+  recordedSteps: Array<{
+    nodeId: string;
+    instruction: string;
+    execution: RecordingExecution;
+    actions?: StagehandActionDescriptor[];
+  }>;
 }
 
 export async function recordScenarioToGraph(
@@ -195,7 +200,9 @@ async function processStep(options: ProcessStepOptions): Promise<void> {
 
   if (!dryRun) {
     try {
-      const metadata = await stagehand.act(step.text);
+      const actResult = await stagehand.act(step.text);
+      const metadata = actResult.metadata;
+      const stagehandActions = actResult.actions ?? [];
       recordedSteps.push({
         nodeId,
         instruction: step.text,
@@ -206,6 +213,7 @@ async function processStep(options: ProcessStepOptions): Promise<void> {
           cacheKey: metadata.cacheKey,
           timestamp: metadata.timestamp,
         },
+        actions: stagehandActions,
       });
     } catch (error) {
       recordedSteps.push({
@@ -404,10 +412,4 @@ export function buildPlaceholderDefaults(): Record<string, string> {
     E2E_INVALID_PASSWORD: process.env.E2E_INVALID_PASSWORD ?? 'WrongPassword!123',
     E2E_UNKNOWN_EMAIL: process.env.E2E_UNKNOWN_EMAIL ?? 'unknown.user@example.com',
   };
-}
-
-export function createStubPage(): Page {
-  return {
-    url: () => 'about:blank',
-  } as unknown as Page;
 }

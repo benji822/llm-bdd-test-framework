@@ -25,6 +25,10 @@ Auxiliary:
   • yarn spec:ci-verify → CI bundle + deterministic reporting
 ```
 
+## Stagehand-first authoring CLI
+
+`yarn bdd record <specPath>` interprets a plain-text spec (from `tests/qa-specs/`), drives Stagehand for each step, persists the resulting action graph, and compiles deterministic `.feature`/`.steps.ts` artifacts without the clarifications → normalization stages. It is the Stagehand-centric alternative for authors who prefer working directly with natural-language specs and want to keep CI runs deterministic.
+
 Every CLI command in `package.json` is a thin wrapper around a TypeScript module that can also be imported for programmatic use.
 
 ## Stage Modules

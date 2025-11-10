@@ -27,6 +27,7 @@
     "ci:policy": "tsx tests/scripts/ci-policy.ts",
     "spec:benchmarks": "tsx tests/scripts/benchmarks.ts",
     "bdd:record-login": "tsx tests/scripts/cli-record-login.ts",
+    "bdd": "tsx tests/scripts/cli-bdd.ts",
     "pretest": "tsx tests/scripts/ci-policy.ts",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
