@@ -32,6 +32,15 @@ Example: "Use Oracle to review this CI pipeline for efficiency and reliability"
 5. **Secret scanning** to prevent credential leaks
 6. **Artifact packaging** under `tests/artifacts/ci-bundle/`
 
+## CI Policy Guard
+
+`yarn ci:policy` (also wired into the lifecycle via `pretest`) runs immediately before `yarn test` and refuses to proceed when the deterministic preconditions are not met. On CI it:
+
+- Fails if `AUTHORING_MODE` or `MOCK_LOGIN_APP` is enabled so Stagehand/LLM authoring cannot leak into the pipeline.
+- Validates that `tests/normalized/`, `tests/features/`, and `tests/steps/generated/` contain the compiled artifacts and step definitions CI relies on.
+
+The guard gives clear errors when the pipeline needs to regenerate artifacts or the wrong knobs are set, keeping the CI job deterministic and Stagehand-free.
+
 ## GitHub Actions Example
 
 ```yaml

@@ -1,6 +1,6 @@
 # AGENTS.md — Beads-Backed Agent Workflow
 
-This file defines how agents and humans collaborate in this repo using Beads (the `bd` CLI).
+This file defines how agents and humans collaborate in this repo using Beads via the MCP server (`mcp__beads__*` functions). Fall back to the `bd` CLI only if MCP access is unavailable.
 
 Notes
 - Scope: entire repository.
@@ -13,7 +13,7 @@ Notes
 - Use ChunkHound for research before any change.
 
 ## Required Tools
-- `bd` (Beads CLI).
+- Beads MCP server: call `mcp__beads__*` functions for all issue-tracking operations (run the `bd` CLI only when MCP is unreachable).
 - ChunkHound: `mcp__chunkhound__search_semantic`, `mcp__chunkhound__search_regex`.
 - Existing project toolboxes via `$AMP_TOOLBOX` if applicable.
 
@@ -29,6 +29,8 @@ IMPORTANT: This project uses bd (beads) for ALL issue tracking. Do NOT use markd
 - Prevents duplicate tracking systems and confusion
 
 ### Quick Start
+
+Use the corresponding `mcp__beads__*` function for each command below (e.g., `mcp__beads__ready`, `mcp__beads__create`, `mcp__beads__update`); run the CLI form only as a fallback.
 
 Check for ready work:
 `bd ready --json`
@@ -61,6 +63,8 @@ Complete work:
 - 4 — Backlog (future ideas)
 
 ### Workflow for AI Agents
+
+Default to MCP calls (`mcp__beads__ready`, `mcp__beads__update`, etc.); treat CLI commands as emergency fallback tooling.
 
 1. Check ready work: `bd ready` shows unblocked issues
 2. Claim your task: `bd update <id> --status in_progress`
@@ -138,17 +142,19 @@ Benefits:
    - `bd ready`
 
 ## Daily Agent Workflow
+
+Execute every step through the MCP functions when available; mirror commands exist in the CLI if MCP is down.
 - Research first (ChunkHound):
   - Semantic: `mcp__chunkhound__search_semantic` (describe what you need)
   - Regex: `mcp__chunkhound__search_regex` (pinpoint code/identifiers)
 
-- Plan with Beads:
+- Plan with Beads (use `mcp__beads__create`, `mcp__beads__dep_add`, etc.; CLI fallback shown below):
   - Create work: `bd add --title "<clear goal>" --type task --area testing --priority P2`
   - Add acceptance: `bd note add <id> "Given/When/Then ..."`
   - Dependencies: `bd dep add <id> <blocks-id>`
   - Provenance: `bd discovered-from <id> <source-id-or-url>`
 
-- Execute:
+- Execute (e.g., `mcp__beads__ready`, `mcp__beads__start`, `mcp__beads__update`; CLI fallback below):
   - Get queue: `bd ready` (pulls next ready items)
   - Start work: `bd start <id>`
   - Update status/notes: `bd update <id> --status in_progress` ; `bd note add <id> "finding X"`

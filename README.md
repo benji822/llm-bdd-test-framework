@@ -85,6 +85,8 @@ ANTHROPIC_API_KEY=your_key_here
 E2E_BASE_URL=http://localhost:4200
 E2E_USER_EMAIL=qa.user@example.com
 E2E_USER_PASSWORD=SuperSecure123!
+E2E_INVALID_PASSWORD=WrongPassword!123
+E2E_UNKNOWN_EMAIL=unknown.user@example.com
 ```
 
 ### Write Your First Spec
@@ -394,12 +396,15 @@ Selector registry entries (`tests/artifacts/selectors/registry.json`) follow:
 | `E2E_BASE_URL` | Yes | - | Application URL used by Playwright and selector validation. |
 | `E2E_USER_EMAIL` | Yes | - | Default QA account email. |
 | `E2E_USER_PASSWORD` | Yes | - | Default QA account password. |
+| `E2E_INVALID_PASSWORD` | No | `WrongPassword!123` | Fallback password used for negative login scenarios. |
+| `E2E_UNKNOWN_EMAIL` | No | `unknown.user@example.com` | Placeholder email for unknown-account flows. |
 | `LLM_TEMPERATURE` | No | `0.1` | LLM sampling temperature (0–1). |
 | `LLM_MAX_TOKENS` | No | `3000` | Max tokens per LLM request. |
 | `LLM_TIMEOUT_MS` | No | `120000` | Timeout per LLM request in milliseconds. |
 | `LLM_CACHE` | No | `on` | Set to `off` to bypass local cache. |
 | `AUTHORING_MODE` | No | `false` | Set to `true` during local authoring sessions to allow live Stagehand/LLM calls; must remain `false`/unset in CI. |
 | `STAGEHAND_CACHE_DIR` | No | `.stagehand-cache` | Directory used by the Stagehand disk cache shared between authoring runs and CI verification. |
+| `MOCK_LOGIN_APP` | No | `false` | When `true`, Playwright intercepts `E2E_BASE_URL` and serves the built-in mock login UI for local spikes. |
 
 ## Workflow Commands
 
@@ -466,6 +471,20 @@ yarn test:headed
 yarn test:ui
 yarn test:report
 ```
+
+### Stagehand Recording Demo
+
+```bash
+# Record + compile the happy-path login scenario from normalized YAML
+yarn bdd:record-login \
+  --yaml tests/normalized/example-login.yaml \
+  --scenario "Authenticate With Valid Credentials"
+
+# Replay the generated feature against the built-in mock login page
+MOCK_LOGIN_APP=true yarn test
+```
+
+The recorder builds an action graph using Stagehand cache metadata, committed selectors, and normalized YAML, then compiles outputs into `tests/features/compiled/` and `tests/steps/generated/`. Enabling `MOCK_LOGIN_APP` swaps the real backend with a lightweight HTML login form served via Playwright request interception so you can prove the record→compile→run loop locally without external services.
 
 ## Test Execution
 

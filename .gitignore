@@ -14,6 +14,7 @@ test-results/
 playwright-report/
 playwright/.cache/
 tests/.features-gen/
+playwright-traces/
 
 # Test artifacts
 tests/artifacts/reports/
@@ -21,6 +22,23 @@ tests/artifacts/screenshots/
 tests/artifacts/videos/
 tests/artifacts/logs/*.log
 !tests/artifacts/logs/.gitkeep
+tests/artifacts/graph/
+tests/artifacts/cache/
+tests/artifacts/selectors/drift-report.json
+
+# Temporary test files / local scratch space
+tests/tmp/
+
+# Optional AI planning history (kept out of VCS)
+history/
+
+# Coverage outputs
+coverage/
+nyc_output/
+
+# Local tools/config caches
+.claude/
+.envrc
 
 # IDE
 .vscode/*

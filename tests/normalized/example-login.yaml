@@ -7,18 +7,22 @@ scenarios:
         text: I am on the login page
       - type: when
         text: I enter email as <E2E_USER_EMAIL>
+        selector: email-input
       - type: and
         text: I enter password as <E2E_USER_PASSWORD>
+        selector: password-input
       - type: and
         text: I click the submit button
+        selector: submit-button
       - type: then
         text: I should see text Welcome back
+        selector: dashboard-heading
     selectors:
-      login-page: 'TODO: add navigation assertion for /login'
-      email-input: 'TODO: add selector for email input'
-      password-input: 'TODO: add selector for password input'
-      submit-button: 'TODO: add selector for submit button'
-      dashboard-heading: 'TODO: add selector for dashboard heading'
+      login-page: "[data-testid='login-page']"
+      email-input: "[data-testid='email-input']"
+      password-input: "[data-testid='password-input']"
+      submit-button: "[data-testid='submit-button']"
+      dashboard-heading: "[data-testid='dashboard-heading']"
     testData:
       email: <E2E_USER_EMAIL>
       password: <E2E_USER_PASSWORD>
@@ -28,49 +32,60 @@ scenarios:
         text: I am on the login page
       - type: when
         text: I enter email as <E2E_USER_EMAIL>
+        selector: email-input
       - type: and
-        text: I enter password as <INVALID_PASSWORD>
+        text: I enter password as <E2E_INVALID_PASSWORD>
+        selector: password-input
       - type: and
         text: I click the submit button
+        selector: submit-button
       - type: then
         text: I should see text Invalid credentials provided
+        selector: error-banner
       - type: and
         text: I enter password as <E2E_USER_PASSWORD>
+        selector: password-input
       - type: and
         text: I click the submit button
+        selector: submit-button
       - type: then
         text: I should see text Welcome back
+        selector: dashboard-heading
     selectors:
-      login-page: 'TODO: add navigation assertion for /login'
-      email-input: 'TODO: add selector for email input'
-      password-input: 'TODO: add selector for password input'
-      submit-button: 'TODO: add selector for submit button'
-      error-message: 'TODO: add selector for inline error message'
-      dashboard-heading: 'TODO: add selector for dashboard heading'
+      login-page: "[data-testid='login-page']"
+      email-input: "[data-testid='email-input']"
+      password-input: "[data-testid='password-input']"
+      submit-button: "[data-testid='submit-button']"
+      error-banner: "[data-testid='login-error']"
+      dashboard-heading: "[data-testid='dashboard-heading']"
     testData:
       email: <E2E_USER_EMAIL>
-      invalidPassword: <INVALID_PASSWORD>
+      invalidPassword: <E2E_INVALID_PASSWORD>
       password: <E2E_USER_PASSWORD>
   - name: Reject Unknown Email
     steps:
       - type: given
         text: I am on the login page
       - type: when
-        text: I enter email as <UNKNOWN_EMAIL>
+        text: I enter email as <E2E_UNKNOWN_EMAIL>
+        selector: email-input
       - type: and
         text: I enter password as <E2E_USER_PASSWORD>
+        selector: password-input
       - type: and
         text: I click the submit button
+        selector: submit-button
       - type: then
         text: I should see text Invalid credentials provided
+        selector: error-banner
     selectors:
-      login-page: 'TODO: add navigation assertion for /login'
-      email-input: 'TODO: add selector for email input'
-      password-input: 'TODO: add selector for password input'
-      submit-button: 'TODO: add selector for submit button'
-      error-message: 'TODO: add selector for inline error message'
+      login-page: "[data-testid='login-page']"
+      email-input: "[data-testid='email-input']"
+      password-input: "[data-testid='password-input']"
+      submit-button: "[data-testid='submit-button']"
+      error-banner: "[data-testid='login-error']"
     testData:
-      email: <UNKNOWN_EMAIL>
+      email: <E2E_UNKNOWN_EMAIL>
       password: <E2E_USER_PASSWORD>
   - name: Block Empty Submission
     steps:
@@ -78,12 +93,14 @@ scenarios:
         text: I am on the login page
       - type: when
         text: I click the submit button
+        selector: submit-button
       - type: then
         text: I should see text Please fill out this field.
+        selector: required-field-message
     selectors:
-      login-page: 'TODO: add navigation assertion for /login'
-      submit-button: 'TODO: add selector for submit button'
-      required-field-message: 'TODO: add selector for required field validation prompt'
+      login-page: "[data-testid='login-page']"
+      submit-button: "[data-testid='submit-button']"
+      required-field-message: "[data-testid='required-field-message']"
     testData:
       requiredMessage: Please fill out this field.
 metadata:

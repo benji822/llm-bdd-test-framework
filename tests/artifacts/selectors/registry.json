@@ -42,6 +42,16 @@
       "page": "/dashboard",
       "accessible": true
     },
+    "login-page": {
+      "id": "login-page",
+      "type": "testid",
+      "selector": "[data-testid='login-page']",
+      "priority": 3,
+      "lastSeen": "2025-10-18T09:21:32.142447+00:00",
+      "stability": "high",
+      "page": "/login",
+      "accessible": false
+    },
     "error-banner": {
       "id": "error-banner",
       "type": "role",
@@ -51,6 +61,16 @@
       "stability": "medium",
       "page": "/login",
       "accessible": true
+    },
+    "required-field-message": {
+      "id": "required-field-message",
+      "type": "testid",
+      "selector": "[data-testid='required-field-message']",
+      "priority": 3,
+      "lastSeen": "2025-10-18T09:21:32.142447+00:00",
+      "stability": "medium",
+      "page": "/login",
+      "accessible": false
     },
     "radiogroup-queriesmutations": {
       "id": "radiogroup-queriesmutations",
