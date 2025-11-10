@@ -28,8 +28,25 @@ Step Vocabulary   ├─> Gherkin Features ─────────►│ gen
                   │                              └─────────────────────┘
                   │  yarn spec:ci-verify         ┌─────────────────────┐
                   └─> CI Verification ─────────►│ ci-verify            │
-                                                  └─────────────────────┘
+└─────────────────────┘
 ```
+
+## Stagehand-first CLI Flow
+
+```
+Plain Text Spec ───► yarn bdd record ───► Stagehand action graph ───► compile (features + steps) ───► Playwright execution
+```
+
+`yarn bdd record` (see `tests/scripts/cli-bdd.ts`) parses the natural-language spec, drives Stagehand step-by-step (`tests/scripts/stagehand/pipeline.ts`), persists the deterministic graph to `tests/artifacts/graph/`, and hands the graph to `action-graph/compiler.ts` to emit stable `.feature` and `.steps.ts` artifacts. Use `--dry-run` to walk Stagehand without writing files, `--skip-compile` to persist only the graph, and `--base-url` to override the navigation target.
+
+| Stage | Module(s) | CLI Command | Responsibility |
+|-------|-----------|-------------|----------------|
+| Spec parsing + Stagehand recording | `tests/scripts/stagehand/pipeline.ts`, `tests/scripts/stagehand/recorder.ts` | `yarn bdd record` (`tests/scripts/cli-bdd.ts`) | Transform plain-text spec into an action graph with deterministic instructions and metadata |
+| Graph persistence | `tests/scripts/action-graph/persistence.ts` | (implicitly invoked) | Versioned storage under `tests/artifacts/graph/`, enabling repeatable runs and history |
+| Graph compilation | `tests/scripts/action-graph/compiler.ts` | `yarn spec:compile-graph` (also used by `bdd record`) | Generate `.feature` files under `tests/features/compiled/` and step definitions under `tests/steps/generated/` for deterministic CI |
+| Deterministic execution | `tests/scripts/ci-policy.ts`, Playwright tests | `yarn ci:policy`, `yarn test` | Assert that CI runs only against pre-generated artifacts (features, steps, selectors) and runs Playwright deterministically |
+
+Stagehand output supports the rest of the deterministic pipeline: pre-generated selectors are reused by `spec:collect-selectors`/`spec:selector-drift`, and CI verification (`spec:ci-verify`) still lints features and validates coverage/selector alignment before Playwright runs.
 
 ## When to Invoke Oracle
 
