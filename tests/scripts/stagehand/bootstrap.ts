@@ -21,14 +21,25 @@ export async function createAuthoringStagehandWrapper(
     ...options,
   };
   const page = createStubPage();
-  return new StagehandWrapper(
-    page,
-    new StagehandCtor({ env: 'LOCAL', verbose: 0 }),
-    runtimeOptions,
-  );
+  const stagehandCtorOptions = buildStagehandCtorOptions();
+  const stagehandInstance = new StagehandCtor(stagehandCtorOptions);
+  if (typeof stagehandInstance.init === 'function') {
+    await stagehandInstance.init();
+  }
+  return new StagehandWrapper(page, stagehandInstance, runtimeOptions);
 }
 
 async function resolveStagehandCtor(): Promise<StagehandCtor> {
+  const forceMock = parseBooleanEnv(process.env.STAGEHAND_USE_MOCK) === true;
+  if (!forceMock) {
+    try {
+      const realModule = await import('@browserbasehq/stagehand');
+      return (realModule as { Stagehand: StagehandCtor }).Stagehand;
+    } catch (error) {
+      console.warn('Failed to load real Stagehand. Falling back to mock:', (error as Error).message);
+    }
+  }
+
   const mockPath = path.join(
     process.cwd(),
     'tests',
@@ -38,20 +49,77 @@ async function resolveStagehandCtor(): Promise<StagehandCtor> {
     'stagehand',
     'index.js'
   );
-  try {
-    const mockModule = await import(pathToFileURL(mockPath).href);
-    if (mockModule && 'Stagehand' in mockModule) {
-      return (mockModule as { Stagehand: StagehandCtor }).Stagehand;
-    }
-    throw new Error('mock Stagehand missing');
-  } catch {
-    const realModule = await import('@browserbasehq/stagehand');
-    return (realModule as { Stagehand: StagehandCtor }).Stagehand;
+
+  const mockModule = await import(pathToFileURL(mockPath).href);
+  if (mockModule && 'Stagehand' in mockModule) {
+    console.info('Using mock Stagehand implementation (STAGEHAND_USE_MOCK=true).');
+    return (mockModule as { Stagehand: StagehandCtor }).Stagehand;
   }
+
+  throw new Error('Stagehand constructor could not be resolved');
 }
 
 export function createStubPage(): Page {
   return {
     url: () => 'about:blank',
   } as unknown as Page;
+}
+
+function buildStagehandCtorOptions(): V3Options {
+  const opts: V3Options = {
+    env: 'LOCAL',
+    verbose: 0,
+  };
+  configureOpenRouterEnv(opts);
+  return opts;
+}
+
+function configureOpenRouterEnv(opts: V3Options): void {
+  const apiKey = process.env.OPENROUTER_API_KEY?.trim();
+  if (!apiKey || isCiEnvironment()) {
+    return;
+  }
+
+  const baseUrl = process.env.OPENROUTER_BASE_URL?.trim();
+  process.env.OPENAI_API_KEY = apiKey;
+  if (baseUrl) {
+    process.env.OPENAI_API_BASE_URL = baseUrl;
+  } else if (!process.env.OPENAI_API_BASE_URL) {
+    process.env.OPENAI_API_BASE_URL = 'https://openrouter.ai/api/v1';
+  }
+
+  const model = process.env.OPENROUTER_MODEL?.trim();
+  if (model && model.length > 0) {
+    opts.model = model;
+  }
+
+  console.info('Stagehand authoring routed through OpenRouter (OPENAI_API_BASE_URL/KEY set).');
+}
+
+const TRUE_ENV_VALUES = new Set(['1', 'true', 'yes', 'on']);
+const FALSE_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
+
+function parseBooleanEnv(value?: string): boolean | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+  if (TRUE_ENV_VALUES.has(normalized)) {
+    return true;
+  }
+  if (FALSE_ENV_VALUES.has(normalized)) {
+    return false;
+  }
+  return undefined;
+}
+
+function isCiEnvironment(): boolean {
+  return (
+    parseBooleanEnv(process.env.CI) === true ||
+    parseBooleanEnv(process.env.GITHUB_ACTIONS) === true ||
+    parseBooleanEnv(process.env.BUILDKITE) === true
+  );
 }

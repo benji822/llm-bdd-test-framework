@@ -1,5 +1,8 @@
 import { test as bddTest } from 'playwright-bdd';
-import { ensureMockLoginApp } from '../steps/support/mock-login-app.js';
+import '../steps/navigation.steps';
+import '../steps/interaction.steps';
+import '../steps/assertion.steps';
+import { ensureMockLoginApp } from '../steps/support/mock-login-app';
 
 export const test = bddTest.extend({
   page: async ({ page }, use) => {

@@ -21,6 +21,15 @@ type SelectorIssue = {
   graph: string;
 };
 
+interface ActionNode {
+  selectors?: Array<{ id?: string }>;
+  instructions?: { deterministic?: { selector?: string } };
+}
+
+interface ActionGraph {
+  nodes?: ActionNode[];
+}
+
 export async function validateSelectors(options: ValidateSelectorsOptions): Promise<ValidationReport> {
   const graphDir = path.resolve(options.graphDir ?? DEFAULT_GRAPH_DIR);
   const registry = await loadRegistry(options.registryPath);
@@ -31,7 +40,12 @@ export async function validateSelectors(options: ValidateSelectorsOptions): Prom
 
   for (const file of graphFiles) {
     const content = await readTextFile(file);
-    const graph = JSON.parse(content) as { nodes?: Array<{ selectors?: Array<{ id?: string }>; instructions?: { deterministic?: { selector?: string } } }>; };
+    const graph = JSON.parse(content) as {
+      nodes?: Array<{
+        selectors?: Array<{ id?: string }>;
+        instructions?: { deterministic?: { selector?: string } };
+      }>;
+    };
     const missing = findMissingSelectors(graph, registry);
     missing.forEach((selector) => {
       issues.push({
@@ -71,7 +85,7 @@ async function findFiles(root: string, extension: string): Promise<string[]> {
   return files;
 }
 
-function findMissingSelectors(graph: { nodes?: Array<{ selectors?: Array<{ id?: string }>; instructions?: { deterministic?: { selector?: string } } }> } }, registry: SelectorRegistry): SelectorIssue[] {
+function findMissingSelectors(graph: ActionGraph, registry: SelectorRegistry): SelectorIssue[] {
   const missing: SelectorIssue[] = [];
   const nodes = graph.nodes ?? [];
 

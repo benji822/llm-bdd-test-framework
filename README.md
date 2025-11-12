@@ -251,11 +251,18 @@ Selector registry entries (`tests/artifacts/selectors/registry.json`) follow:
 | `AUTHORING_MODE` | No | `true` | Enable authoring policies for Stagehand runs (CI should set or leave `false`). |
 | `STAGEHAND_CACHE_DIR` | No | `tests/tmp/stagehand-cache` | Directory used by Stagehand to persist cached plans and actions. |
 | `MOCK_LOGIN_APP` | No | `false` | When `true`, Playwright swaps in a mock login UI for rapid feedback loops. |
+| `OPENROUTER_API_KEY` | No | - | Optional API key for OpenRouter; set this locally to route Stagehand recording calls through OpenRouter (ignored in CI). |
+| `OPENROUTER_MODEL` | No | `gpt-4o-mini` | Model identifier sent to OpenRouter when the API key is present. |
+| `OPENROUTER_BASE_URL` | No | `https://openrouter.ai/api/v1/chat/completions` | Override the OpenRouter API endpoint (handy for proxies or testing). |
 | `E2E_BASE_URL` | Yes | - | Application endpoint used by Playwright, selectors, and Stagehand. |
 | `E2E_USER_EMAIL` | Yes | - | Default QA login email. |
 | `E2E_USER_PASSWORD` | Yes | - | Default QA login password. |
 | `E2E_INVALID_PASSWORD` | No | `WrongPassword!123` | Negative-case password used in failing scenarios. |
 | `E2E_UNKNOWN_EMAIL` | No | `unknown.user@example.com` | Placeholder email for unknown-account flows. |
+
+### OpenRouter authoring (optional)
+
+Set `OPENROUTER_API_KEY` (and optionally `OPENROUTER_MODEL`/`OPENROUTER_BASE_URL`) when you want Stagehand to send LLM requests through OpenRouter during local authoring runs. The key is only honored when `AUTHORING_MODE` permits authoring and CI-related flags (`CI`, `GITHUB_ACTIONS`, `BUILDKITE`) are absent, so automation jobs stay deterministic without needing OpenRouter credentials. Running with OpenRouter does incur token charges for whichever upstream model you pick, so tip the cache balance toward the Stagehand cache and refer to https://openrouter.ai/pricing for your current per-token cost estimates.
 
 ## Workflow Commands
 

@@ -7,8 +7,22 @@ When('I enter {word} as {string}', async ({ page }, field: string, value: string
   await page.fill(locator, value);
 });
 
+When('I enter {word} as <{word}>', async ({ page }, field: string, placeholder: string) => {
+  const locator = `[data-testid='${field}-input']`;
+  const key = placeholder.trim();
+  const value = process.env[key] ?? '';
+  await page.fill(locator, value);
+});
+
 When('I select {word} as {string}', async ({ page }, field: string, value: string) => {
   const locator = `[data-testid='${field}-select']`;
+  await page.selectOption(locator, { label: value });
+});
+
+When('I select {word} as <{word}>', async ({ page }, field: string, placeholder: string) => {
+  const locator = `[data-testid='${field}-select']`;
+  const key = placeholder.trim();
+  const value = process.env[key] ?? '';
   await page.selectOption(locator, { label: value });
 });
 
