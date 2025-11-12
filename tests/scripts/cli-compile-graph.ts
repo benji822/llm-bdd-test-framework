@@ -3,59 +3,14 @@ import process from 'node:process';
 
 import './utils/load-env';
 
-import type { ActionGraph } from './action-graph/types.js';
-import { compileActionGraph } from './action-graph/compiler.js';
-import { readTextFile } from './utils/file-operations';
-
-interface CliOptions {
-  graphFiles: string[];
-  featureDir?: string;
-  stepsDir?: string;
-  dryRun: boolean;
-  includeMetadata: boolean;
-}
-
-function parseArgs(argv: string[]): CliOptions {
-  const graphFiles: string[] = [];
-  let featureDir: string | undefined;
-  let stepsDir: string | undefined;
-  let dryRun = false;
-  let includeMetadata = true;
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const token = argv[i];
-    switch (token) {
-      case '--feature-dir':
-      case '--features':
-        featureDir = argv[i + 1];
-        i += 1;
-        break;
-      case '--steps-dir':
-      case '--steps':
-        stepsDir = argv[i + 1];
-        i += 1;
-        break;
-      case '--dry-run':
-        dryRun = true;
-        break;
-      case '--no-metadata':
-        includeMetadata = false;
-        break;
-      default:
-        if (token.startsWith('--')) {
-          throw new Error(`Unknown argument: ${token}`);
-        }
-        graphFiles.push(token);
-        break;
-    }
-  }
-
-  return { graphFiles, featureDir, stepsDir, dryRun, includeMetadata };
-}
+import {
+  compileGraphArtifact,
+  parseCompileGraphArgs,
+} from './cli/compile-graph-core.js';
 
 async function main(): Promise<void> {
   try {
-    const options = parseArgs(process.argv.slice(2));
+    const options = parseCompileGraphArgs(process.argv.slice(2));
     if (options.graphFiles.length === 0) {
       printUsage();
       process.exitCode = 1;
@@ -63,22 +18,13 @@ async function main(): Promise<void> {
     }
 
     for (const graphPath of options.graphFiles) {
-      const raw = await readTextFile(graphPath);
-      const graph = JSON.parse(raw) as ActionGraph;
-
-      const result = await compileActionGraph(graph, {
-        featureDir: options.featureDir,
-        stepsDir: options.stepsDir,
-        dryRun: options.dryRun,
-        includeMetadata: options.includeMetadata,
-      });
-
+      const summary = await compileGraphArtifact(graphPath, options.execution);
       console.log(
         [
-          `Compiled scenario "${graph.metadata.scenarioName}"`,
-          `feature: ${result.featurePath}`,
-          `steps: ${result.stepsPath}`,
-          options.dryRun ? '[dry-run]' : '',
+          `Compiled scenario "${summary.scenarioName}"`,
+          `feature: ${summary.featurePath}`,
+          `steps: ${summary.stepsPath}`,
+          options.execution.dryRun ? '[dry-run]' : '',
         ]
           .filter(Boolean)
           .join(' | '),
@@ -91,7 +37,7 @@ async function main(): Promise<void> {
 }
 
 function printUsage(): void {
-  console.log('Usage: yarn spec:compile-graph <graph.json...> [--feature-dir <dir>] [--steps-dir <dir>] [--dry-run]');
+  console.log('Usage: yarn spec:compile-graph <graph.json...> [--feature-dir <dir>] [--steps-dir <dir>] [--dry-run] [--no-metadata]');
 }
 
 void main();

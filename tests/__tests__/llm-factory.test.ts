@@ -10,6 +10,13 @@ const codexStubClient = {
   completions: {
     generate: async () => ({ completion: 'ok' }),
   },
+  startThread: () => ({
+    run: async () => ({
+      items: [],
+      finalResponse: 'ok',
+      usage: null,
+    }),
+  }),
 };
 
 const claudeStubClient = {

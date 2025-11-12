@@ -118,8 +118,9 @@ test('validateSelectorDrift reports missing/updated/new selectors without applyi
       return {
         async goto(url: string) {
           currentRoute = new URL(url).pathname;
+          return null;
         },
-        async evaluate() {
+        async evaluate(_fn?: () => ExtractedSelector[] | Promise<ExtractedSelector[]>) {
           return extractedByRoute.get(currentRoute) ?? [];
         },
         async close() {},
@@ -214,9 +215,11 @@ test('validateSelectorDrift applies updates when requested', async () => {
   const browserFactory: BrowserFactory = async () => ({
     async newPage() {
       return {
-        async goto() {},
-        async evaluate(route?: string) {
-          return extractedByRoute.get(route ?? '') ?? [];
+        async goto() {
+          return null;
+        },
+        async evaluate(_fn?: () => ExtractedSelector[] | Promise<ExtractedSelector[]>) {
+          return extractedByRoute.get('/cart') ?? [];
         },
         async close() {},
       };

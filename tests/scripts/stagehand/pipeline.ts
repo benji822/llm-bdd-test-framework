@@ -125,7 +125,7 @@ async function recordScenarioGraph(params: RecordScenarioParams): Promise<Scenar
     .setSpecId(spec.specId)
     .setScenarioName(scenario.name)
     .setFeatureName(spec.featureName ?? path.basename(spec.specPath))
-    .setAuthorship(true, 'stagehand');
+    .setAuthorship(true, 'manual');
 
   const recordedSteps: ScenarioRecordingResult['recordedSteps'] = [];
   const orderedNodeIds: string[] = [];

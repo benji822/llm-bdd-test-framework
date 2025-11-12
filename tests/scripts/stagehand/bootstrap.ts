@@ -4,6 +4,9 @@ import type { Page } from '@playwright/test';
 
 import { StagehandWrapper } from './wrapper.js';
 import type { StagehandRuntimeOptions } from './types.js';
+import type { Stagehand, V3Options } from '@browserbasehq/stagehand';
+
+type StagehandCtor = new (opts: V3Options) => Stagehand;
 
 export async function createAuthoringStagehandWrapper(
   options: StagehandRuntimeOptions = {}
@@ -18,10 +21,14 @@ export async function createAuthoringStagehandWrapper(
     ...options,
   };
   const page = createStubPage();
-  return new StagehandWrapper(page, new StagehandCtor(), runtimeOptions);
+  return new StagehandWrapper(
+    page,
+    new StagehandCtor({ env: 'LOCAL', verbose: 0 }),
+    runtimeOptions,
+  );
 }
 
-async function resolveStagehandCtor(): Promise<new () => unknown> {
+async function resolveStagehandCtor(): Promise<StagehandCtor> {
   const mockPath = path.join(
     process.cwd(),
     'tests',
@@ -34,12 +41,12 @@ async function resolveStagehandCtor(): Promise<new () => unknown> {
   try {
     const mockModule = await import(pathToFileURL(mockPath).href);
     if (mockModule && 'Stagehand' in mockModule) {
-      return (mockModule as { Stagehand: new () => unknown }).Stagehand;
+      return (mockModule as { Stagehand: StagehandCtor }).Stagehand;
     }
     throw new Error('mock Stagehand missing');
   } catch {
     const realModule = await import('@browserbasehq/stagehand');
-    return (realModule as { Stagehand: new () => unknown }).Stagehand;
+    return (realModule as { Stagehand: StagehandCtor }).Stagehand;
   }
 }
 

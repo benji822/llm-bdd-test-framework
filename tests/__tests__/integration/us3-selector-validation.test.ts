@@ -4,9 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 
-import { collectSelectors } from '../../scripts/collect-selectors';
+import {
+  collectSelectors,
+  type BrowserFactory,
+  type ExtractedSelector,
+} from '../../scripts/collect-selectors';
 import { validateSelectors } from '../../scripts/validate-selectors';
-import type { BrowserFactory } from '../../scripts/collect-selectors';
 
 let tempDir: string;
 
@@ -76,8 +79,9 @@ metadata:
         async goto(url: string) {
           route = new URL(url).pathname;
           visits.push(route);
+          return null;
         },
-        async evaluate() {
+        async evaluate(_fn?: () => ExtractedSelector[] | Promise<ExtractedSelector[]>) {
           return extractedSelectors.get(route) ?? [];
         },
         async close() {},

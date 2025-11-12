@@ -397,6 +397,24 @@ yarn bdd record <specPath> [--scenario <name>] [--graph-dir <dir>] [--feature-di
 
 This command parses the plain-text spec, lets Stagehand execute each step, stores the resulting action graph, and compiles deterministic features and step defs. Skip compilation (`--skip-compile`), run a dry run (`--dry-run`), or override the base URL as needed.
 
+### Umbrella CLI helpers
+
+```bash
+# Bootstrap the workspace
+yarn bdd init
+
+# Compile saved action graphs into deterministic artifacts
+yarn bdd compile tests/artifacts/graph/<spec>__scenario.json --feature-dir tests/features/compiled --steps-dir tests/steps/generated [--dry-run] [--no-metadata]
+
+# Run the Playwright suite using the current artifacts
+yarn bdd run [playwright args]
+
+# Validate the generated artifacts (mirrors yarn spec:ci-verify)
+yarn bdd verify [--normalized <dir>] [--features <dir>] [--selectors <path>] [--vocabulary <path>] [--report <path>] [--ci-report <path>] [--bundle <dir>] [--timeout <ms>]
+```
+
+`yarn bdd init` ensures the expected artifact directories (`tests/artifacts`, `tests/features/compiled`, `tests/steps/generated`, etc.) exist and bootstraps `.env.local` from `.env.example`. `yarn bdd compile` reuses the same compiler powering `yarn spec:compile-graph`, producing `.feature` and `.steps.ts` outputs from saved action graphs. `yarn bdd run` proxies to `yarn test`, forwarding any Playwright arguments you supply (for example `--headed` or `--grep`). `yarn bdd verify` wraps `yarn spec:ci-verify`, running the schema, lint, coverage, selector, and secret scans and accepting the same CLI flags. Run `yarn bdd help` to show this overview at any time.
+
 ### Optional: Legacy LLM-driven pipeline
 
 ```bash

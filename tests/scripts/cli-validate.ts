@@ -2,6 +2,7 @@
 import path from 'node:path';
 import process from 'node:process';
 import fs from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
 
 import { validateFeatureCoverage } from './validate-coverage';
 import { validateSelectors } from './validate-selectors';
@@ -79,7 +80,7 @@ async function main(): Promise<void> {
 }
 
 async function findFiles(root: string, extension: string): Promise<string[]> {
-  let entries: fs.Dirent[];
+  let entries: Dirent[];
   try {
     entries = await fs.readdir(root, { withFileTypes: true });
   } catch (error: unknown) {

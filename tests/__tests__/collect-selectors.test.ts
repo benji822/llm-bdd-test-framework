@@ -69,8 +69,9 @@ test('collectSelectors writes registry and prefers higher priority entries', asy
         async goto(url: string) {
           currentRoute = new URL(url).pathname;
           visitedRoutes.push(currentRoute);
+          return null;
         },
-        async evaluate() {
+        async evaluate(_fn?: () => ExtractedSelector[] | Promise<ExtractedSelector[]>) {
           return extractedByRoute.get(currentRoute) ?? [];
         },
         async close() {
@@ -152,10 +153,13 @@ test('collectSelectors merges newly discovered selectors without dropping existi
 
   const browserFactory: BrowserFactory = async () => ({
     async newPage() {
+      let currentRoute = '/login';
       return {
-        async goto() {},
-        async evaluate(route?: string) {
-          return extractedByRoute.get(route ?? '') ?? [];
+        async goto() {
+          return null;
+        },
+        async evaluate(_fn?: () => ExtractedSelector[] | Promise<ExtractedSelector[]>) {
+          return extractedByRoute.get(currentRoute) ?? [];
         },
         async close() {},
       };

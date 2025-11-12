@@ -48,6 +48,19 @@ Plain Text Spec ───► yarn bdd record ───► Stagehand action graph
 
 Stagehand output supports the rest of the deterministic pipeline: pre-generated selectors are reused by `spec:collect-selectors`/`spec:selector-drift`, and CI verification (`spec:ci-verify`) still lints features and validates coverage/selector alignment before Playwright runs.
 
+### Umbrella CLI `yarn bdd`
+
+The `tests/scripts/cli-bdd.ts` entry point now wires together the bootstrap, authoring, compilation, execution, and verification helpers described below. Each subcommand provides friendly reporting, enforces non-zero exit codes, and routes to the shared cores in `tests/scripts/cli/` where applicable.
+
+| Command | Module(s) | Responsibility |
+|---------|-----------|----------------|
+| `yarn bdd init` | `tests/scripts/cli-bdd.ts` | Ensures the artifact and cache directories exist (`tests/artifacts/**`, `tests/features/compiled`, `tests/steps/generated`, `tests/tmp/stagehand-cache`) and bootstraps `.env.local` from `.env.example`. |
+| `yarn bdd compile <graph.json...>` | `tests/scripts/cli-bdd.ts`, `tests/scripts/cli/compile-graph-core.ts`, `tests/scripts/action-graph/compiler.ts` | Compiles saved action graphs into deterministic `.feature` and `.steps.ts` artifacts (supports `--dry-run`, `--no-metadata`, `--feature-dir`, and `--steps-dir`). |
+| `yarn bdd run [playwright args]` | `tests/scripts/cli-bdd.ts` | Proxies to `yarn test`, forwarding any Playwright flags (`--headed`, `--grep`, etc.) so the suite runs with the latest compiled artifacts. |
+| `yarn bdd verify [--normalized <dir>]...` | `tests/scripts/cli-bdd.ts`, `tests/scripts/cli/ci-verify-core.ts`, `tests/scripts/ci-verify.ts` | Wraps `runCiVerification`, reusing the same CLI flags as `spec:ci-verify`, and surfaces the canonical exit codes for schema/lint/coverage/selector/secret checks. |
+
+Run `yarn bdd help` at any time to see the full command reference.
+
 ## When to Invoke Oracle
 
 For pipeline work, consider using Oracle when:

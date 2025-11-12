@@ -5,6 +5,7 @@ import {
   readSelectorRegistry,
   writeSelectorRegistry,
 } from './selector-registry';
+import type { Response } from '@playwright/test';
 
 type BrowserFactory = () => Promise<BrowserAdapter>;
 
@@ -14,8 +15,13 @@ interface BrowserAdapter {
 }
 
 interface PageAdapter {
-  goto(url: string, options?: { waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' }): Promise<void>;
-  evaluate<T>(pageFunction: () => T | Promise<T>): Promise<T>;
+  goto(
+    url: string,
+    options?: { waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' },
+  ): Promise<Response | null>;
+  evaluate(
+    pageFunction: () => ExtractedSelector[] | Promise<ExtractedSelector[]>
+  ): Promise<ExtractedSelector[]>;
   close(): Promise<void>;
 }
 
@@ -194,7 +200,8 @@ async function defaultBrowserFactory(): Promise<BrowserAdapter> {
       return {
         goto: (url: string, options?: { waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' }) =>
           page.goto(url, options),
-        evaluate: <T>(fn: () => T | Promise<T>) => page.evaluate(fn),
+      evaluate: (fn: () => ExtractedSelector[] | Promise<ExtractedSelector[]>) =>
+        page.evaluate(fn),
         close: () => page.close(),
       };
     },
