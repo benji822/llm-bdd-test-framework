@@ -6,134 +6,92 @@ globs:
   - 'tests/qa-specs/**/*.txt'
 ---
 
-# BDD Testing and LLM Integration Guidelines
+# BDD Testing Guidelines
 
 ## Overview
 
-This project transforms plain-text QA specifications into executable Playwright BDD test suites using Large Language Models (LLMs). Authoring flows stay fast and expressive, while CI is fully deterministic—no LLM calls run in CI pipelines.
+Plain-text QA specs in `tests/qa-specs/` drive Stagehand, which records deterministic action graphs. These graphs compile to `.feature` files and Playwright step definitions, ensuring CI runs only against committed artifacts.
 
 ## When to Invoke Oracle
 
-For testing work, consider using Oracle when:
-- Designing new test architectures or patterns
-- Debugging complex test failures with LLM integration
-- Reviewing test coverage and quality
-- Planning major refactoring of the testing pipeline
+Use Oracle when you're:
+- Designing new Stagehand stages or selector validation logic
+- Investigating flaky Playwright tests linked to generated graphs
+- Reviewing CI validity flows or bundling artifacts
+- Planning cross-cutting changes to selectors, vocabulary, or policy guards
 
-Example: "Use Oracle to review this BDD test architecture for scalability and maintainability"
+Example: “Use Oracle to review the Stagehand graph compiler for stability and maintainability.”
 
 ## Pipeline Stages
 
-### 1. Spec Authoring (Plain Text)
-- Keep specs small—one feature area per file (< 1 KB)
-- Use descriptive, natural language
-- Focus on user behavior, not implementation details
+### 1. Spec Authoring
+- Keep specs focused (ideally < 1 KB per feature area).
+- Write steps in natural language that describe observable behavior.
+- Store the spec under `tests/qa-specs/` for Stagehand intake.
 
-### 2. LLM Processing (Authoring Only)
-- Uses Codex/Claude for intelligent test generation
-- Generates clarification questions for missing details
-- Normalizes specs into structured YAML with caching
+### 2. Stagehand Recording
+- Run `yarn bdd record <spec>` to let Stagehand act through each instruction.
+- Graphs live under `tests/artifacts/graph/` with deterministic selectors and metadata.
+- Use `--dry-run` or `--skip-compile` to iterate without persisting compiled files.
 
-### 3. Schema Validation
-- Zod-backed schemas enforce structure
-- Validates selectors, test data, and vocabulary coverage
-- Catches issues early in the pipeline
+### 3. Graph Compilation
+- `yarn bdd compile <graph.json>` produces `.feature` and `.steps.ts` files consumed by `playwright-bdd`.
+- Compiled artifacts appear under `tests/features/compiled` and `tests/steps/generated`.
+- Features include metadata comments linking back to the originating graph for traceability.
 
-### 4. Gherkin Generation
-- Produces executable `.feature` files
-- Enforces controlled vocabulary
-- Guarantees step implementations exist
+### 4. Selector Hygiene
+- `yarn spec:collect-selectors` crawls routes to refresh `tests/artifacts/selectors/registry.json`.
+- `yarn spec:selector-drift` compares live scans against the committed registry to highlight missing or updated locators.
 
-### 5. Playwright Execution
-- Fully deterministic in CI
-- Uses selector registry for stable locators
-- Environment-variable resolved test data
+### 5. Validation & CI
+- `yarn bdd verify` lints features, checks vocabulary coverage, validates selectors against graphs, scans for secrets, and bundles artifacts.
+- `yarn ci:policy` ensures artifact directories exist and forbids authoring-mode flags inside CI.
 
-## LLM Integration Patterns
+## Shared Utilities
 
-### Provider Abstraction
-```typescript
-interface LLMCompletionOptions {
-  model: string;
-  temperature?: number;
-  maxTokens?: number;
-  timeoutMs?: number;
-}
-
-abstract class LLMProvider {
-  abstract generateCompletion(prompt: string, options: LLMCompletionOptions): Promise<LLMCompletionResult>;
-}
-```
-
-### Error Handling & Retries
-- Timeout enforced at 120s by default
-- Exponential backoff for transient failures
-- Non-retriable codes bubble up immediately
-
-### Response Caching
-- SHA-256 hash of clarifications content
-- Cache hit rate 60-80% for iterative refinement
-- Bypass with `--force` flag when needed
-
-## When to Ask Librarian
-
-"Use Librarian to research BDD testing patterns in popular frameworks"
-
-"Ask Librarian about Playwright best practices for test isolation"
-
-## Best Practices
-
-- Commit generated artifacts for deterministic CI
-- Use batch processing for multiple specs
-- Validate selectors against running app before generation
-- Run full pipeline locally before pushing
+- `tests/scripts/utils/file-operations.ts` handles directories, JSON, and file read/write helpers.
+- `tests/scripts/utils/logging.ts` emits structured events consumed by CLI wrappers.
+- `tests/scripts/utils/secret-scanner.ts` powers secret detection used by CI.
+- `tests/scripts/utils/concurrent.ts` coordinates parallel workloads (Stagehand recording, selector scanning).
 
 ## Common Issues
 
-### LLM Request Timeout
-- Increase `LLM_TIMEOUT_MS` in environment
-- Check API quotas and connectivity
-- Switch providers if needed
+### Graph Compilation Failures
+- Inspect `tests/artifacts/graph/*.json` for nodes missing selectors or deterministic actions.
+- Re-record the spec with `yarn bdd record --dry-run` to capture the latest UI state.
 
-### Missing Clarifications
-- Answer all **Required: Yes** questions
-- Review schema requirements
-- Ensure natural language is unambiguous
+### Selector Not Found
+- Ensure the selector appears in `tests/artifacts/selectors/registry.json` after running `yarn spec:collect-selectors`.
+- Validate the route/locator combination that Stagehand records matches the current UI.
 
-### Selector Validation Failures
-- Run app at `E2E_BASE_URL`
-- Recollect selectors: `yarn spec:collect-selectors`
-- Add `data-testid` or ARIA attributes if needed
+### Vocabulary Coverage Gaps
+- `tests/artifacts/step-vocabulary.json` defines approved step patterns.
+- Adjust feature text or add new vocabulary entries while keeping the curated dictionary versioned.
+
+### CI Policy Failures
+- Run `yarn ci:policy` locally if CI rejects the run; it reports missing graphs/features/selectors early.
+- Disable `AUTHORING_MODE` and `MOCK_LOGIN_APP` before packaging artifacts for CI.
 
 ## Oracle + Librarian Workflow
 
-### Example: Adding New Test Pattern
+### Example: Validating a New Selector Strategy
 
 **Step 1: Research (Librarian)**
 ```
-"Use Librarian to research how other BDD frameworks handle async operations.
-Search: cucumber-js, playwright-bdd repos
-Focus on: promise handling, timeout patterns"
+"Use Librarian to research selector stabilization patterns in Playwright-based suites. Focus on caching and accessible locators."
 ```
 
-**Step 2: Design (Oracle)**
+**Step 2: Analyze (Oracle)**
 ```
-"Based on Librarian's findings, use Oracle to design our async test pattern:
-- Adapt patterns to our LLM pipeline
-- Consider caching implications
-- Design error handling strategy"
+"Design a selector strategy that prioritizes roles/labels, avoids brittle CSS, and integrates with `collect-selectors`."
 ```
 
 **Step 3: Implement (Main Agent)**
 ```
-"Implement the async pattern based on Oracle's design.
-Reference Librarian's findings for specific implementations."
+"Update Stagehand recorder helpers, extend the selector registry schema, and document the approach."
 ```
 
-**Step 4: Review (Oracle)**
+**Step 4: Validate (Oracle)**
 ```
-"Use Oracle to review the async test implementation:
-- Code quality and maintainability
-- Performance implications
-- Edge cases and error handling"
+"Review the updated pipeline: graph recording, selectors, and Playwright steps for resilience." 
 ```

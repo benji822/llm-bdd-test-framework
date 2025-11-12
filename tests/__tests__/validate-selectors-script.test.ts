@@ -5,45 +5,36 @@ import path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 
 import { validateSelectors } from '../scripts/validate-selectors';
+import type { ActionGraph } from '../scripts/action-graph/types';
+
+type GraphNode = ActionGraph['nodes'][number];
 
 let tempDir: string;
 
 beforeEach(async () => {
-  tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'us3-validate-'));
+  tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'validate-selectors-'));
 });
 
 afterEach(async () => {
   await fs.rm(tempDir, { recursive: true, force: true });
 });
 
-test('validateSelectors reports missing selectors with suggestions', async () => {
-  const normalizedDir = path.join(tempDir, 'normalized');
+test('validateSelectors reports missing registry entries cited by graphs', async () => {
+  const graphDir = path.join(tempDir, 'graph');
   const registryPath = path.join(tempDir, 'selectors', 'registry.json');
-  const reportPath = path.join(tempDir, 'artifacts/report.json');
+  const reportPath = path.join(tempDir, 'artifacts', 'report.json');
 
-  await fs.mkdir(normalizedDir, { recursive: true });
+  await fs.mkdir(graphDir, { recursive: true });
   await fs.mkdir(path.dirname(registryPath), { recursive: true });
-  await fs.writeFile(
-    path.join(normalizedDir, 'checkout.yaml'),
-    `feature: Checkout
-scenarios:
-  - name: Submit order
-    steps:
-      - type: given
-        text: I am on the checkout page
-      - type: then
-        text: I should see text "Order confirmed"
-    selectors:
-      confirm-banner: "div[role='status']"
-      submit-button: "[data-testid='submit-order']"
-metadata:
-  specId: "44444444-4444-4444-4444-444444444444"
-  generatedAt: "2025-10-18T10:30:00Z"
-  llmProvider: "codex"
-  llmModel: "stub-model"
-`,
-    'utf8',
+
+  const graph = createGraph(
+    [
+      { selectorId: 'confirm-banner', locator: "div[role='status']" },
+      { selectorId: 'submit-button', locator: "[data-testid='submit-order']" },
+    ],
   );
+
+  await fs.writeFile(path.join(graphDir, 'checkout.json'), JSON.stringify(graph, null, 2), 'utf8');
 
   await fs.writeFile(
     registryPath,
@@ -62,16 +53,6 @@ metadata:
             page: '/checkout',
             accessible: true,
           },
-          'accessible-submit': {
-            id: 'accessible-submit',
-            type: 'role',
-            selector: "[role='button'][aria-label='Submit order']",
-            priority: 1,
-            lastSeen: '2025-10-17T00:00:00Z',
-            stability: 'high',
-            page: '/checkout',
-            accessible: true,
-          },
         },
       },
       null,
@@ -80,46 +61,28 @@ metadata:
     'utf8',
   );
 
-  const report = await validateSelectors({
-    normalizedDir,
-    registryPath,
-    reportPath,
-  });
+  const report = await validateSelectors({ graphDir, registryPath, reportPath });
 
   assert.equal(report.issues.length, 1);
+  assert.equal(report.summary.selectorMismatches, 1);
   assert.match(report.issues[0].message, /submit-button/);
-  assert.equal(report.issues[0].suggestion, 'accessible-submit');
-
   const stored = JSON.parse(await fs.readFile(reportPath, 'utf8'));
-  assert.equal(stored.issues.length, 1);
   assert.equal(stored.summary.selectorMismatches, 1);
 });
 
-test('validateSelectors passes when all selectors exist', async () => {
-  const normalizedDir = path.join(tempDir, 'normalized');
+test('validateSelectors passes when all selectors exist for graphs', async () => {
+  const graphDir = path.join(tempDir, 'graph');
   const registryPath = path.join(tempDir, 'selectors', 'registry.json');
-  const reportPath = path.join(tempDir, 'artifacts/report.json');
+  const reportPath = path.join(tempDir, 'artifacts', 'report.json');
 
-  await fs.mkdir(normalizedDir, { recursive: true });
+  await fs.mkdir(graphDir, { recursive: true });
   await fs.mkdir(path.dirname(registryPath), { recursive: true });
-  await fs.writeFile(
-    path.join(normalizedDir, 'profile.yaml'),
-    `feature: Profile
-scenarios:
-  - name: Update details
-    steps:
-      - type: then
-        text: I should see text "Saved"
-    selectors:
-      saved-banner: "div[role='status']"
-metadata:
-  specId: "55555555-5555-5555-5555-555555555555"
-  generatedAt: "2025-10-18T11:30:00Z"
-  llmProvider: "codex"
-  llmModel: "stub-model"
-`,
-    'utf8',
-  );
+
+  const graph = createGraph([
+    { selectorId: 'saved-banner', locator: "div[role='status']" },
+  ]);
+
+  await fs.writeFile(path.join(graphDir, 'profile.json'), JSON.stringify(graph, null, 2), 'utf8');
 
   await fs.writeFile(
     registryPath,
@@ -146,14 +109,51 @@ metadata:
     'utf8',
   );
 
-  const report = await validateSelectors({
-    normalizedDir,
-    registryPath,
-    reportPath,
-  });
+  const report = await validateSelectors({ graphDir, registryPath, reportPath });
 
   assert.equal(report.issues.length, 0);
   assert.equal(report.failed, 0);
   const stored = JSON.parse(await fs.readFile(reportPath, 'utf8'));
   assert.equal(stored.issues.length, 0);
 });
+
+function createGraph(selectors: Array<{ selectorId: string; locator: string }>): ActionGraph {
+  const nodes: GraphNode[] = selectors.map((selector, index) => ({
+    nodeId: `step_${index}`,
+    type: 'act',
+    stepIndex: index,
+    gherkinStep: {
+      keyword: 'when',
+      text: `Interact with ${selector.selectorId}`,
+    },
+    selectors: [
+      {
+        id: selector.selectorId,
+        locator: selector.locator,
+      },
+    ],
+    instructions: {
+      deterministic: {
+        selector: selector.selectorId,
+        action: 'click',
+      },
+    },
+  }));
+
+  return {
+    graphId: 'graph-test',
+    version: '1.0',
+    nodes,
+    edges: [],
+    metadata: {
+      createdAt: new Date().toISOString(),
+      specId: 'spec-test',
+      scenarioName: 'Test scenario',
+      featureName: 'Test feature',
+      authorship: {
+        authoringMode: true,
+        authoredBy: 'tests',
+      },
+    },
+  };
+}

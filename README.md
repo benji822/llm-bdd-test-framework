@@ -1,6 +1,6 @@
-# LLM-Powered BDD Test Framework
+# Stagehand BDD Test Framework
 
-An automated testing framework that transforms plain-text QA specifications into executable Playwright BDD test suites using Large Language Models (LLMs). Authoring flows stay fast and expressive, while CI is fully deterministic—no LLM calls run in CI pipelines.
+An automated testing framework that transforms plain-text QA specifications into executable Playwright BDD suites via Stagehand. Authoring runs interact with the app through natural language, while CI only consumes the deterministic outputs (`graph` → `feature` + `steps`).
 
 ## Table of Contents
 - [Features](#features)
@@ -11,17 +11,23 @@ An automated testing framework that transforms plain-text QA specifications into
   - [Generate Tests](#generate-tests)
 - [Best Practices](#best-practices)
 - [Pipeline Overview](#pipeline-overview)
-- [Performance Optimizations](#performance-optimizations)
 - [Architecture & Design Principles](#architecture--design-principles)
 - [Directory Structure](#directory-structure)
-- [LLM Integration](#llm-integration)
-  - [Multi-Provider Architecture](#multi-provider-architecture)
-  - [Provider Interface](#provider-interface)
-  - [Provider Selection](#provider-selection)
-  - [LLM Performance Optimizations](#llm-performance-optimizations)
-  - [Error Handling & Retries](#error-handling--retries)
-  - [Response Caching](#response-caching)
-  - [Prompt Management](#prompt-management)
+- [Test Data Management](#test-data-management)
+- [Selector Strategy](#selector-strategy)
+- [Environment Variables](#environment-variables)
+- [Workflow Commands](#workflow-commands)
+  - [Stagehand-first authoring](#stagehand-first-authoring)
+  - [Umbrella CLI helpers](#umbrella-cli-helpers)
+  - [Supporting commands](#supporting-commands)
+- [Test Execution](#test-execution)
+  - [Playwright Commands](#playwright-commands)
+  - [Test Lifecycle](#test-lifecycle)
+  - [Step Implementations](#step-implementations)
+  - [Controlled Vocabulary](#controlled-vocabulary)
+- [Writing New Tests](#writing-new-tests)
+- [CI/CD Integration](#cicd-integration)
+  - [GitHub Actions Example](#github-actions-example)
 - [Test Data Management](#test-data-management)
 - [Selector Strategy](#selector-strategy)
 - [Environment Variables](#environment-variables)
@@ -47,12 +53,11 @@ An automated testing framework that transforms plain-text QA specifications into
 
 ## Features
 
-- 🤖 **LLM-Assisted Authoring**: Uses OpenAI Codex or Anthropic Claude to generate test artifacts.
-- ✅ **Deterministic Execution**: LLMs only run during authoring; CI pipelines validate pre-generated assets.
-- 🚀 **Performance Optimized**: Differential caching, parallel processing, and tuned parameters minimize turnaround time.
-- 📝 **Schema Validation**: Zod-backed schemas enforce structure for YAML specs, selectors, and reports.
-- 🎯 **Controlled Vocabulary**: Step definitions are bound to an approved vocabulary to guarantee coverage.
-- ♿ **Accessibility-First Selectors**: Prioritizes ARIA roles and labels before falling back to test IDs.
+- ⚙️ **Stagehand-first recordings**: Plain-text specs feed Stagehand, which records deterministic action graphs and emits compiled artifacts.
+- ✅ **Deterministic execution**: Playwright consumes committed graphs, features, steps, and selectors so CI never depends on live authoring.
+- 🔍 **Selector hygiene**: `collect-selectors`, `selector-drift`, and `validate-selectors` keep the registry aligned with the UI.
+- 🧪 **Validation guardrail**: `yarn bdd verify` enforces linting, vocabulary coverage, selector presence, and secret scanning before tests run.
+- 📦 **Artifact bundling**: CI packages graphs, selectors, features, and reports in `tests/artifacts/ci-bundle/` for auditing.
 
 ## Quick Start
 
@@ -75,12 +80,9 @@ cp .env.example .env.local
 Edit `.env.local` with your settings:
 
 ```env
-LLM_PROVIDER=codex       # or "claude"
-LLM_MODEL=gpt-5-codex
-
-OPENAI_API_KEY=your_key_here
-# or
-ANTHROPIC_API_KEY=your_key_here
+AUTHORING_MODE=true    # allow stagehand recording locally
+STAGEHAND_CACHE_DIR=tests/tmp/stagehand-cache
+MOCK_LOGIN_APP=false
 
 E2E_BASE_URL=http://localhost:4200
 E2E_USER_EMAIL=qa.user@example.com
@@ -121,81 +123,39 @@ yarn bdd record tests/qa-specs/example-login.txt \
   --steps-dir tests/steps/generated
 ```
 
-The Stagehand-first `bdd record` command walks natural-language specs through Stagehand, persists versioned action graphs to `tests/artifacts/graph/`, and compiles deterministic `.feature`/`.steps.ts` outputs. Add `--dry-run` to validate authoring without writing files, `--skip-compile` to stop after the graph is stored, and `--base-url` to supply a fallback navigation target.
-
-> **Optional legacy pipeline:** if you still need clarification questions → normalization, the older flow (`yarn spec:questions`, `yarn spec:normalize`, `yarn spec:features`) is described in the Workflow Commands section below.
+`yarn bdd record` drives Stagehand through each step, stores the deterministic action graph under `tests/artifacts/graph`, and compiles the resulting `.feature`/`.steps.ts` artifacts under `tests/features/compiled` and `tests/steps/generated`. Use `--dry-run`, `--skip-compile`, or `--base-url` to shape the authoring iteration without having to rewrite previous artifacts.
 
 ## Best Practices
 
-- Keep specs small—one feature area per file (< 1 KB) so Stagehand stays focused.
-- Prefer the Stagehand-first command (`yarn bdd record …`) for new specs; it skips clarifications while still creating deterministic artifacts.
-- Commit generated `.feature` and `.steps.ts` files so CI can verify without authoring-time LLM calls.
-- Use the clarification/normalization flow only if you need human-reviewed YAML or extra metadata.
-- Start with TODO selectors, then resolve them with `yarn spec:validate-and-fix` before compiling.
-- Run `yarn bdd record` locally (with `--dry-run` if needed) before falling back to CI to confirm the graph → feature loop remains stable.
+- Keep specs narrow (one feature area, ~1 KB) so Stagehand can focus on deterministic interactions.
+- Author via `yarn bdd record` once per feature, keep the compiled `.feature` and `.steps.ts` artifacts under version control, and only re-run the recorder when behavior changes.
+- Refresh selectors via `yarn spec:collect-selectors` (or `yarn spec:selector-drift`) before relying on new graphs, so the registry stays accurate.
+- Validate compiled outputs locally with `yarn bdd verify` before pushing to CI; the same guards run under the `pretest` hook.
 
 ## Pipeline Overview
 
 ```
 Plain Text Spec ──────────► yarn bdd record ──────────► Stagehand action graph ──────────► compile (features + steps) ──────────► Playwright execution
-
-Optional (LLM-backed):
-Plain Text Spec ──► yarn spec:questions ──► clarifications ──► yarn spec:normalize ──► normalized YAML ──► yarn spec:features ──► Playwright execution
 ```
 
 All CLI commands live in `tests/scripts/`, so the same modules can be invoked manually or via scripting. See `tests/docs/architecture.md` for a deeper architecture walkthrough.
 
-## Performance Optimizations
-
-### Solution 1.2: Differential Updates (Smart Caching)
-
-- Clarifications content is hashed (SHA-256) and stored in YAML metadata.
-- If the hash matches on subsequent runs, cached YAML is returned instantly (< 1 second).
-- Ideal for iterative spec refinement; typical cache hit rate is 60–80%.
-- Force regeneration when needed with `yarn spec:normalize ... --force`.
-
-### Solution 1.3: Parallel Batch Processing
-
-- Processes multiple specs concurrently using dynamic worker pools.
-- Default concurrency auto-tunes to `(CPU cores - 1)`; override via `--concurrency`.
-- Reuses the LLM provider across tasks for connection pooling and progress reporting.
-- 3–4× faster than sequential processing for 10-spec workloads.
-
-### Solution 1.4: Parameter Optimization
-
-- Temperature reduced to 0.1 for deterministic outputs.
-- Max tokens limited to 3000 and timeout lowered to 120s to reduce latency.
-- Override via environment variables when experimentation is required.
-
-| Scenario | Before | After | Improvement |
-|----------|--------|-------|-------------|
-| Single spec (cached) | 100s | <1s | **100× faster** |
-| Single spec (fresh) | 100s | 95s | 5% faster |
-| 10 specs (sequential) | 1000s | 200s | **5× faster** |
-| 10 specs (parallel, cached) | 1000s | 10s | **100× faster** |
-| Output determinism | Variable | Consistent | Massive stability gain |
-
 ## Architecture & Design Principles
 
-1. **LLM Isolation**: Authoring uses LLMs; execution and CI are deterministic.
-2. **API-First Data Seeding**: Prefer API-backed setup over brittle UI flows.
-3. **Deterministic Placeholders**: Resolve values such as `<E2E_USER_EMAIL>` from environment variables.
-4. **Stable Selectors**: Favor ARIA roles and `data-testid` attributes before CSS fallbacks.
-5. **Auditability**: Commit generated artifacts so CI and reviewers can diff outputs.
-6. **Fail-Fast Validation**: Multiple gates (schema, lint, coverage, selectors, secrets) each with dedicated exit codes.
+1. **Stagehand First**: Plain-text specs are fed directly into Stagehand; LLM heuristics no longer participate in the CI path.
+2. **Graph Determinism**: Every run snapshots a Stagehand action graph (`tests/artifacts/graph/`), ensuring compilation produces the same `.feature` and `.steps.ts` files each time.
+3. **Selectors as First-Class Citizens**: Selector collection, drift detection, and validation work against `tests/artifacts/selectors/registry.json`, so Playwright can reuse stable locators.
+4. **Validation Gatekeepers**: Linting, coverage, selectors, and secret scans run via `yarn bdd verify`, so failures surface before Playwright executes.
 
 | Stage | Module | CLI Entry Point | Responsibility | Key Dependencies |
 |-------|--------|-----------------|----------------|------------------|
-| Clarification | `generate-questions.ts` | `tests/scripts/cli-questions.ts` (`yarn spec:questions`) | Render prompts, call LLM, persist Q&A markdown. | `llm/`, prompt renderer, logging. |
-| Normalization | `normalize-yaml.ts` | `tests/scripts/cli-normalize.ts` (`yarn spec:normalize`, `yarn spec:normalize:batch`) | Convert spec + clarifications into schema-validated YAML with caching. | `llm/`, `utils/hash`, `utils/yaml-parser`, `types/yaml-spec`. |
-| Selector Hygiene | `collect-selectors.ts` | `tests/scripts/cli-collect-selectors.ts` (`yarn spec:collect-selectors`) | Crawl the running app and refresh `tests/artifacts/selectors/registry.json`. | Playwright Chromium runner, `utils/file-operations`. |
-| Optional Gate | `validate-and-fix-selectors.ts` | `tests/scripts/cli-validate-and-fix.ts` (`yarn spec:validate-and-fix`) | Validate selectors referenced in YAML, emit reports, optionally auto-fix. | Playwright, `types/yaml-spec`, logging. |
-| Drift Validation | `selector-drift.ts` | `tests/scripts/cli-selector-drift.ts` (`yarn spec:selector-drift`) | Compare live scans against the registry, emit drift reports, optionally apply updates. | `collect-selectors`, selector registry helpers. |
-| Feature Generation | `generate-features.ts` | `tests/scripts/cli-features.ts` (`yarn spec:features`) | Produce `.feature` files and enforce vocabulary coverage and lint rules. | `validate-coverage`, `gherkin-lint`, step vocabulary JSON. |
-| Graph Compilation | `action-graph/compiler.ts` | `tests/scripts/cli-compile-graph.ts` (`yarn spec:compile-graph`) | Convert deterministic action graphs into `.feature` files and localized step definitions. | `action-graph`, selector registry, `utils/file-operations`. |
-| Validation (offline) | `validate-selectors.ts`, `validate-coverage.ts` | `tests/scripts/cli-validate.ts` (`yarn spec:validate`) | Run selector and vocabulary checks without opening a browser. | `types/validation-report`, selector registry. |
-| CI Verification | `ci-verify.ts` | `tests/scripts/cli-ci-verify.ts` (`yarn spec:ci-verify`) | Aggregate schema, lint, coverage, selector, and secret checks; bundle artifacts. | `utils/secret-scanner`, logging, validation modules. |
-| Benchmarks | `benchmarks.ts` | `yarn spec:benchmarks` | Measure throughput across stages to catch performance regressions. | `utils/benchmark-runner`. |
+| Stagehand recording | `tests/scripts/stagehand/pipeline.ts` | `yarn bdd record` | Interpret plain-text specs with Stagehand, persist deterministic graphs, and trigger compilation. | `stagehand/wrapper`, Playwright cache helpers, `action-graph` compiler. |
+| Graph persistence | `tests/scripts/action-graph/persistence.ts` | (implicit) | Store versioned graphs under `tests/artifacts/graph` for repeatable test determinism. | `fs`, JSON utilities. |
+| Graph compilation | `tests/scripts/action-graph/compiler.ts` | `yarn bdd compile` | Convert action graphs into `.feature` and `.steps.ts` artifacts consumed by Playwright BDD. | `gherkin`, `playwright-bdd`, selector metadata. |
+| Selector hygiene | `tests/scripts/collect-selectors.ts` | `yarn spec:collect-selectors` | Scan live routes, refresh the selector registry, and cache locators for deterministic tests. | Playwright Chromium adapter, registry utilities. |
+| Drift validation | `tests/scripts/selector-drift.ts` | `yarn spec:selector-drift` | Compare fresh scans to the committed registry, report missing/updated selectors, and optionally patch the registry. | `collect-selectors`, structured logging. |
+| Validation | `tests/scripts/validate-selectors.ts`, `tests/scripts/validate-coverage.ts` | `yarn bdd verify` | Ensure graphs reference known selectors, features match approved vocabulary, and both deliverable types stay consistent. | `types/validation-report`, `utils/secret-scanner`. |
+| CI verification | `tests/scripts/ci-verify.ts` | `yarn bdd verify` | Aggregate lint, coverage, selector, and secret checks; package graphs, features, selectors, and reports for audits. | `gherkin-lint`, `scanFilesForSecrets`, artifact bundler. |
 
 Shared utilities live under `tests/scripts/utils/`, and Zod schemas under `tests/scripts/types/` keep contracts explicit.
 
@@ -204,17 +164,20 @@ Shared utilities live under `tests/scripts/utils/`, and Zod schemas under `tests
 ```
 .
 ├── tests/
-│   ├── qa-specs/           # Plain-text specifications
-│   ├── clarifications/     # LLM-generated Q&A (with manual answers)
-│   ├── normalized/         # Schema-validated YAML specs
-│   ├── features/           # Generated Gherkin features
-│   ├── steps/              # Playwright BDD step implementations
-│   ├── scripts/            # Pipeline automation scripts
-│   ├── prompts/            # Versioned prompt templates
-│   ├── artifacts/          # Selector registry, vocabulary, reports, caches
-│   ├── config/             # Tooling configuration (e.g., gherkinlint)
-│   ├── schemas/            # JSON schemas for validation
-│   └── __tests__/          # Unit and integration tests (node:test + tsx)
+│   ├── qa-specs/           # Human-authored plain-text specifications
+│   ├── artifacts/
+│   │   ├── graph/           # Stagehand action graphs (JSON)
+│   │   ├── selectors/       # Registry, drift reports, validation logs
+│   │   ├── ci-bundle/       # Packaged artifacts for CI
+│   │   ├── validation-report.json
+│   │   ├── ci-report.json
+│   │   └── step-vocabulary.json
+│   ├── features/           # Compiled Gherkin files (compiled/)
+│   ├── steps/              # Generated Playwright step definitions
+│   ├── scripts/            # Pipeline automation modules and CLI cores
+│   ├── config/             # Tooling configuration (e.g., `gherkinlint.json`)
+│   ├── schemas/            # Validation rule sets (e.g., action-graph schema)
+│   └── __tests__/          # Unit and integration coverage via `node:test`
 ├── package.json
 ├── playwright.config.ts
 ├── tsconfig.json
@@ -223,102 +186,17 @@ Shared utilities live under `tests/scripts/utils/`, and Zod schemas under `tests
 
 | Path | Purpose |
 |------|---------|
-| `tests/qa-specs/` | Human-authored plain-text specifications (pipeline input). |
-| `tests/clarifications/` | Markdown Q&A generated by the LLM and answered by QA. |
-| `tests/normalized/` | Canonical YAML specs validated by Zod. |
-| `tests/features/` | Generated `.feature` files consumed by Playwright BDD. |
-| `tests/steps/` | Step implementations referencing the selector registry and vocabulary. |
-| `tests/scripts/` | TypeScript modules and CLI wrappers for every stage. |
-| `tests/scripts/llm/` | Provider abstraction, timeout handling, retries, logging. |
-| `tests/scripts/utils/` | Shared utilities (file I/O, hashing, prompt rendering, caching). |
-| `tests/scripts/types/` | Zod schemas and TypeScript typings for artifacts and reports. |
-| `tests/prompts/` | Prompt templates rendered before LLM calls. |
-| `tests/artifacts/` | Selector registry (`selectors/registry.json`), drift reports (`selectors/drift-report.json`), vocabulary, validation reports, CI bundles, caches. |
-| `tests/config/` | Tool configuration such as `gherkinlint.json`. |
-| `tests/schemas/` & `tests/contracts/` | JSON schemas enforced across the pipeline. |
-| `tests/__tests__/` | Unit and integration coverage built on `node:test` with `tsx --test`. |
-
-## LLM Integration
-
-### Multi-Provider Architecture
-
-The provider abstraction supports multiple LLM vendors:
-
-- **Codex** (default) via `@openai/codex-sdk`
-- **Claude** via `@anthropic-ai/claude-agent-sdk`
-
-### Provider Interface
-
-```typescript
-interface LLMCompletionOptions {
-  model: string;
-  temperature?: number;
-  maxTokens?: number;
-  timeoutMs?: number;
-}
-
-interface LLMCompletionResult {
-  completion: string;
-  metadata: {
-    provider: 'codex' | 'claude';
-    model: string;
-    tokensUsed: number;
-    responseTime: number;
-  };
-}
-
-abstract class LLMProvider {
-  abstract readonly name: 'codex' | 'claude';
-  abstract generateCompletion(
-    prompt: string,
-    options: LLMCompletionOptions
-  ): Promise<LLMCompletionResult>;
-}
-```
-
-### Provider Selection
-
-Priority order:
-
-1. Explicit CLI parameter
-2. `LLM_PROVIDER` environment variable
-3. Default to `codex`
-
-```bash
-# Use Codex (default)
-LLM_PROVIDER=codex yarn spec:questions tests/qa-specs/login.txt
-
-# Switch to Claude
-LLM_PROVIDER=claude yarn spec:questions tests/qa-specs/login.txt
-```
-
-### LLM Performance Optimizations
-
-- Differential caching (Solution 1.2) short-circuits normalization when clarifications are unchanged.
-- Parallel batch normalization (Solution 1.3) reuses provider instances across specs.
-- Tuned parameters (Solution 1.4) align model configuration with deterministic outputs.
-
-### Error Handling & Retries
-
-- Timeout enforced at 120 000 ms by default (`LLM_TIMEOUT_MS` override).
-- Exponential backoff retries cover transient `PROVIDER_ERROR`, `SDK_TIMEOUT`, and `INVALID_RESPONSE` failures.
-- Non-retriable codes (`SDK_INITIALIZATION_FAILED`, `MODEL_NOT_AVAILABLE`) bubble up immediately with actionable errors.
-
-### Response Caching
-
-- Cache file: `tests/artifacts/cache/llm-cache.json`.
-- Key includes provider, model, prompt content, and parameters.
-- Disable cache for debugging with `LLM_CACHE=off`.
-
-### Prompt Management
-
-Prompts live in `tests/prompts/` and are rendered with simple variable interpolation.
-
-| Prompt | Purpose | Key Variables |
-|--------|---------|---------------|
-| `spec-to-questions.md` | Generate clarification questions from plain-text specs. | `QA_SPEC_TEXT` |
-| `questions-to-yaml.md` | Convert spec + clarifications into normalized YAML. | `QA_SPEC_TEXT`, `CLARIFICATIONS_MD` |
-| `yaml-to-features.md` | Produce `.feature` files with full vocabulary coverage. | `YAML_SPEC`, `STEP_VOCABULARY_JSON`, `SELECTOR_REGISTRY_SNIPPET` |
+| `tests/qa-specs/` | Plain-text feature descriptions that feed Stagehand. |
+| `tests/artifacts/graph/` | Deterministic action graphs captured during authoring. |
+| `tests/features/compiled/` | Compiled `.feature` files consumed by Playwright BDD. |
+| `tests/steps/generated/` | Step definitions produced from the graphs. |
+| `tests/artifacts/selectors/` | Selector registry, drift reports, validation output. |
+| `tests/scripts/` | CLI modules for Stagehand recording, selector utilities, validation, and CI. |
+| `tests/scripts/utils/` | Shared helpers for file ops, logging, and concurrency. |
+| `tests/scripts/types/` | Zod schemas and TypeScript typings for artifacts. |
+| `tests/config/` | Tooling config such as `gherkinlint.json`. |
+| `tests/schemas/` | Validation contracts for graphs, selectors, and reports. |
+| `tests/__tests__/` | Automated coverage for every pipeline slice. |
 
 ## Test Data Management
 
@@ -370,22 +248,14 @@ Selector registry entries (`tests/artifacts/selectors/registry.json`) follow:
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `LLM_PROVIDER` | Yes | `codex` | `codex` or `claude`. |
-| `LLM_MODEL` | Yes | - | Provider-specific model identifier. |
-| `OPENAI_API_KEY` | If `codex` | - | OpenAI API key. |
-| `ANTHROPIC_API_KEY` | If `claude` | - | Anthropic API key. |
-| `E2E_BASE_URL` | Yes | - | Application URL used by Playwright and selector validation. |
-| `E2E_USER_EMAIL` | Yes | - | Default QA account email. |
-| `E2E_USER_PASSWORD` | Yes | - | Default QA account password. |
-| `E2E_INVALID_PASSWORD` | No | `WrongPassword!123` | Fallback password used for negative login scenarios. |
+| `AUTHORING_MODE` | No | `true` | Enable authoring policies for Stagehand runs (CI should set or leave `false`). |
+| `STAGEHAND_CACHE_DIR` | No | `tests/tmp/stagehand-cache` | Directory used by Stagehand to persist cached plans and actions. |
+| `MOCK_LOGIN_APP` | No | `false` | When `true`, Playwright swaps in a mock login UI for rapid feedback loops. |
+| `E2E_BASE_URL` | Yes | - | Application endpoint used by Playwright, selectors, and Stagehand. |
+| `E2E_USER_EMAIL` | Yes | - | Default QA login email. |
+| `E2E_USER_PASSWORD` | Yes | - | Default QA login password. |
+| `E2E_INVALID_PASSWORD` | No | `WrongPassword!123` | Negative-case password used in failing scenarios. |
 | `E2E_UNKNOWN_EMAIL` | No | `unknown.user@example.com` | Placeholder email for unknown-account flows. |
-| `LLM_TEMPERATURE` | No | `0.1` | LLM sampling temperature (0–1). |
-| `LLM_MAX_TOKENS` | No | `3000` | Max tokens per LLM request. |
-| `LLM_TIMEOUT_MS` | No | `120000` | Timeout per LLM request in milliseconds. |
-| `LLM_CACHE` | No | `on` | Set to `off` to bypass local cache. |
-| `AUTHORING_MODE` | No | `false` | Set to `true` during local authoring sessions to allow live Stagehand/LLM calls; must remain `false`/unset in CI. |
-| `STAGEHAND_CACHE_DIR` | No | `.stagehand-cache` | Directory used by the Stagehand disk cache shared between authoring runs and CI verification. |
-| `MOCK_LOGIN_APP` | No | `false` | When `true`, Playwright intercepts `E2E_BASE_URL` and serves the built-in mock login UI for local spikes. |
 
 ## Workflow Commands
 
@@ -415,64 +285,37 @@ yarn bdd verify [--normalized <dir>] [--features <dir>] [--selectors <path>] [--
 
 `yarn bdd init` ensures the expected artifact directories (`tests/artifacts`, `tests/features/compiled`, `tests/steps/generated`, etc.) exist and bootstraps `.env.local` from `.env.example`. `yarn bdd compile` reuses the same compiler powering `yarn spec:compile-graph`, producing `.feature` and `.steps.ts` outputs from saved action graphs. `yarn bdd run` proxies to `yarn test`, forwarding any Playwright arguments you supply (for example `--headed` or `--grep`). `yarn bdd verify` wraps `yarn spec:ci-verify`, running the schema, lint, coverage, selector, and secret scans and accepting the same CLI flags. Run `yarn bdd help` to show this overview at any time.
 
-### Optional: Legacy LLM-driven pipeline
+### Stagehand CLI Primer
 
 ```bash
-# Generate clarification questions
-yarn spec:questions <spec.txt>
+# Bootstrap the deterministic workspace
+yarn bdd init
 
-# Normalize to YAML (uses cache automatically)
-yarn spec:normalize <spec.txt> <clarifications.md> [output.yaml]
+# Record a plain-text spec with Stagehand and persist the graph
+yarn bdd record tests/qa-specs/example-login.txt --graph-dir tests/artifacts/graph --feature-dir tests/features/compiled --steps-dir tests/steps/generated
 
-# Force regeneration (bypass cache)
-yarn spec:normalize <spec.txt> <clarifications.md> --force
+# Recompile saved graphs into `.feature` + `.steps.ts` artifacts
+yarn bdd compile tests/artifacts/graph/<spec>__scenario.json --feature-dir tests/features/compiled --steps-dir tests/steps/generated
 
-# Generate Gherkin features
-yarn spec:features <normalized.yaml>
+# Run the Playwright suite with the latest artifacts
+yarn bdd run [playwright args]
+
+# Validate artifacts (lint, coverage, selectors, secrets)
+yarn bdd verify [--graph-dir <dir>] [--features <dir>] [--selectors <path>] [--vocabulary <path>] [--report <path>] [--ci-report <path>] [--bundle <dir>] [--timeout <ms>]
 ```
 
-### Batch Processing
+`yarn bdd verify` wraps the same validation stack that previously lived under `spec:ci-verify`; the command now works directly off compiled features and Stagehand graphs.
+
+### Supporting Commands
 
 ```bash
-# Normalize all specs in a directory with auto-concurrency
-yarn spec:normalize:batch tests/qa-specs tests/clarifications tests/normalized
-
-# Specify concurrency (default: CPU cores - 1)
-yarn spec:normalize:batch tests/qa-specs tests/clarifications tests/normalized --concurrency 4
-
-# Sequential processing for debugging
-yarn spec:normalize:batch tests/qa-specs tests/clarifications tests/normalized --concurrency 1
-```
-
-### Validation & CI
-
-```bash
-# Collect selectors from the running application
+# Keep the selector registry up to date with the running app
 yarn spec:collect-selectors --route /login --route /dashboard
 
-# Compare live scan vs registry and emit drift report (add --apply to sync)
+# Detect selector drift and optionally sync the registry
 yarn spec:selector-drift --base-url https://app.example.com --route /login --route /dashboard
 
-# Validate vocabulary coverage and selector usage (no browser)
-yarn spec:validate
-
-# Optional Step 3.5 gate: validate selectors directly against the live app
-yarn spec:validate-and-fix tests/normalized/example.yaml
-
-# Deterministic CI verification (schema, lint, coverage, selectors, secrets)
-yarn spec:ci-verify
-```
-
-### Additional Commands
-
-```bash
-# Benchmark pipeline performance across stages
-yarn spec:benchmarks
-
-# Compile saved action graphs into deterministic features + step defs
-yarn spec:compile-graph tests/artifacts/graph/<spec>__scenario.json --feature-dir tests/features/compiled --steps-dir tests/steps/generated
-
-# Run Playwright tests
+# Run Playwright tests (used by `yarn bdd run`)-level automation
 yarn test
 yarn test:headed
 yarn test:ui
@@ -482,16 +325,14 @@ yarn test:report
 ### Stagehand Recording Demo
 
 ```bash
-# Record + compile the happy-path login scenario from normalized YAML
-yarn bdd:record-login \
-  --yaml tests/normalized/example-login.yaml \
-  --scenario "Authenticate With Valid Credentials"
+# Record and compile the example login spec
+yarn bdd record tests/qa-specs/example-login.txt --scenario "Happy path" --graph-dir tests/artifacts/graph --feature-dir tests/features/compiled --steps-dir tests/steps/generated
 
-# Replay the generated feature against the built-in mock login page
-MOCK_LOGIN_APP=true yarn test
+# Run Playwright against the recorded artifacts
+yarn bdd run --headed
 ```
 
-The recorder builds an action graph using Stagehand cache metadata, committed selectors, and normalized YAML, then compiles outputs into `tests/features/compiled/` and `tests/steps/generated/`. Enabling `MOCK_LOGIN_APP` swaps the real backend with a lightweight HTML login form served via Playwright request interception so you can prove the record→compile→run loop locally without external services.
+Recording replays Stagehand step-by-step, compiles the resulting graphs, and stores the deterministic artifacts so Playwright can run without rerunning authoring layers. `MOCK_LOGIN_APP` can still toggle a lightweight HTML shim during Playwright execution.
 
 ## Test Execution
 
@@ -655,21 +496,19 @@ jobs:
 
 ### CI Verification Process
 
-`yarn spec:ci-verify` performs:
+`yarn bdd verify` performs:
 
-1. **Schema validation** for all YAML specs.
-2. **Gherkin linting** across generated `.feature` files.
-3. **Vocabulary coverage** checks.
-4. **Selector reconciliation** against `tests/artifacts/selectors/registry.json`.
-5. **Secret scanning** to prevent credential leaks.
-6. **Artifact packaging** under `tests/artifacts/ci-bundle/`.
+1. **Gherkin linting** across compiled `.feature` files.
+2. **Vocabulary coverage** checks for every step recorded by Stagehand.
+3. **Selector validation** against `tests/artifacts/selectors/registry.json` and the stored action graphs.
+4. **Secret scanning** to prevent credential leaks.
+5. **Artifact packaging** under `tests/artifacts/ci-bundle/` for downstream audits.
 
-Exit codes:
+Exit codes mirror the validation stages so CI can fail fast with actionable feedback:
 
 | Code | Meaning |
 |------|---------|
 | `0` | Success |
-| `2` | Schema validation failed |
 | `3` | Gherkin lint failed |
 | `4` | Step coverage failed |
 | `5` | Selector validation failed |
@@ -677,20 +516,14 @@ Exit codes:
 | `7` | Verification timeout |
 | `9` | Unknown error |
 
-No LLM calls run in CI—only committed artifacts are validated.
+CI validation strictly consumes committed graphs, selectors, and compiled artifacts—no authoring steps run during the verification job.
 
 ## Troubleshooting
 
-### LLM Request Timeout
+### Graph Compilation Issues
 
-- Increase `LLM_TIMEOUT_MS` in `.env.local`.
-- Check API quota and network connectivity.
-- Retry with `LLM_PROVIDER=claude` if Codex is degraded.
-
-### Missing Required Fields During Normalization
-
-- Review the generated clarification markdown; answer all `**Required: Yes**` questions.
-- Confirm the YAML schema in `tests/schemas/yaml-spec.schema.json` for required properties.
+- Inspect the recorded Stagehand graphs if a scenario refuses to compile; confirm every step exposes deterministic selectors and actions.
+- Re-run `yarn bdd record` for a fresh graph once the UI behaviour stabilizes.
 
 ### Selector Not Found in Registry
 
@@ -721,7 +554,7 @@ No LLM calls run in CI—only committed artifacts are validated.
 2. Create a feature branch.
 3. Add or update tests alongside your changes.
 4. Document pipeline updates in the relevant `tests/docs/` files.
-5. Commit generated artifacts (`tests/normalized/`, `tests/features/`, reports) to keep CI deterministic.
+5. Commit generated artifacts (`tests/artifacts/graph/`, `tests/features/compiled/`, `tests/steps/generated/`, reports) to keep CI deterministic.
 6. Open a pull request.
 
 ## License

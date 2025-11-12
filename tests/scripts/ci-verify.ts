@@ -2,19 +2,15 @@ import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { ZodError, type ZodIssue } from 'zod';
-
 import { ensureDir, fileExists, readTextFile, writeTextFile } from './utils/file-operations';
 import { logEvent } from './utils/logging';
-import { parseYaml } from './utils/yaml-parser';
-import { NormalizedYamlSchema } from './types/yaml-spec';
 import type { ValidationIssue, ValidationReport, ValidationSummary } from './types/validation-report';
 import { validateFeatureCoverage } from './validate-coverage';
 import { validateSelectors } from './validate-selectors';
 import { scanFilesForSecrets } from './utils/secret-scanner';
 import { resolveRegistryPath } from './selector-registry';
 
-const DEFAULT_NORMALIZED_DIR = path.resolve('tests/normalized');
+const DEFAULT_GRAPH_DIR = path.resolve('tests/artifacts/graph');
 const DEFAULT_FEATURES_DIR = path.resolve('tests/features');
 const DEFAULT_SELECTORS_PATH = resolveRegistryPath();
 const DEFAULT_VOCABULARY_PATH = path.resolve('tests/artifacts/step-vocabulary.json');
@@ -45,7 +41,7 @@ export class CiVerificationTimeoutError extends Error {
 }
 
 export interface CiVerifyOptions {
-  normalizedDir?: string;
+  graphDir?: string;
   featuresDir?: string;
   selectorsPath?: string;
   vocabularyPath?: string;
@@ -57,7 +53,7 @@ export interface CiVerifyOptions {
 }
 
 interface ResolvedCiVerifyOptions {
-  normalizedDir: string;
+  graphDir: string;
   featuresDir: string;
   selectorsPath: string;
   vocabularyPath: string;
@@ -75,7 +71,7 @@ interface CiVerifyResult {
   bundlePath: string;
   durationMs: number;
   checkedFiles: {
-    normalized: number;
+    graphs: number;
     features: number;
   };
 }
@@ -88,7 +84,7 @@ export async function runCiVerification(options: CiVerifyOptions = {}): Promise<
 
 function resolveOptions(options: CiVerifyOptions): ResolvedCiVerifyOptions {
   return {
-    normalizedDir: path.resolve(options.normalizedDir ?? DEFAULT_NORMALIZED_DIR),
+    graphDir: path.resolve(options.graphDir ?? DEFAULT_GRAPH_DIR),
     featuresDir: path.resolve(options.featuresDir ?? DEFAULT_FEATURES_DIR),
     selectorsPath: resolveRegistryPath(options.selectorsPath ?? DEFAULT_SELECTORS_PATH),
     vocabularyPath: path.resolve(options.vocabularyPath ?? DEFAULT_VOCABULARY_PATH),
@@ -102,25 +98,24 @@ function resolveOptions(options: CiVerifyOptions): ResolvedCiVerifyOptions {
 async function executeCiVerification(options: ResolvedCiVerifyOptions): Promise<CiVerifyResult> {
   const startedAt = Date.now();
 
-  const [yamlFiles, featureFiles] = await Promise.all([
-    findFiles(options.normalizedDir, '.yaml'),
+  const [graphFiles, featureFiles] = await Promise.all([
+    findFiles(options.graphDir, '.json'),
     findFiles(options.featuresDir, '.feature'),
   ]);
 
-  const [schemaIssues, lintIssues, coverageIssues, selectorReport] = await Promise.all([
-    validateYamlSchemas(yamlFiles),
+  const selectorValidation = await runSelectorValidation({
+    graphDir: options.graphDir,
+    selectorsPath: options.selectorsPath,
+    reportPath: options.reportPath,
+  });
+
+  const [lintIssues, coverageIssues] = await Promise.all([
     lintFeatureFiles(featureFiles, options.gherkinConfigPath),
     checkFeatureCoverage(featureFiles, options.vocabularyPath),
-    runSelectorValidation({
-      normalizedDir: options.normalizedDir,
-      featuresDir: options.featuresDir,
-      selectorsPath: options.selectorsPath,
-      reportPath: options.reportPath,
-    }),
   ]);
 
-  const selectorIssues = selectorReport?.issues ?? [];
-  const secretTargets = new Set<string>([...yamlFiles, ...featureFiles]);
+  const selectorIssues = selectorValidation?.issues ?? [];
+  const secretTargets = new Set<string>([...featureFiles, ...graphFiles]);
 
   if (await fileExists(options.selectorsPath)) {
     secretTargets.add(options.selectorsPath);
@@ -131,9 +126,9 @@ async function executeCiVerification(options: ResolvedCiVerifyOptions): Promise<
 
   const secretIssues = await scanFilesForSecrets({ files: Array.from(secretTargets) });
 
-  const allIssues = [...schemaIssues, ...lintIssues, ...coverageIssues, ...selectorIssues, ...secretIssues];
+  const allIssues = [...lintIssues, ...coverageIssues, ...selectorIssues, ...secretIssues];
   const summary: ValidationSummary = {
-    schemaErrors: schemaIssues.length,
+    schemaErrors: 0,
     lintErrors: lintIssues.length,
     selectorMismatches: selectorIssues.length,
     coverageGaps: coverageIssues.length,
@@ -145,7 +140,7 @@ async function executeCiVerification(options: ResolvedCiVerifyOptions): Promise<
   const validationReport = buildCiReport({
     issues: allIssues,
     summary,
-    yamlFiles,
+    graphFiles,
     featureFiles,
   });
 
@@ -153,7 +148,7 @@ async function executeCiVerification(options: ResolvedCiVerifyOptions): Promise<
   await writeTextFile(options.ciReportPath, `${JSON.stringify(validationReport, null, 2)}\n`);
 
   const bundlePath = await packageArtifacts({
-    normalizedDir: options.normalizedDir,
+    graphDir: options.graphDir,
     featuresDir: options.featuresDir,
     selectorsPath: options.selectorsPath,
     selectorReportPath: options.reportPath,
@@ -168,12 +163,16 @@ async function executeCiVerification(options: ResolvedCiVerifyOptions): Promise<
       durationMs,
       bundlePath,
       summary,
+      graphs: graphFiles.length,
+      features: featureFiles.length,
     });
   } else {
     logEvent('ci.verify.failure', 'CI verification detected issues', {
       exitCode,
       issueCount: allIssues.length,
       summary,
+      graphs: graphFiles.length,
+      features: featureFiles.length,
     });
   }
 
@@ -185,39 +184,10 @@ async function executeCiVerification(options: ResolvedCiVerifyOptions): Promise<
     bundlePath,
     durationMs,
     checkedFiles: {
-      normalized: yamlFiles.length,
+      graphs: graphFiles.length,
       features: featureFiles.length,
     },
   };
-}
-
-async function validateYamlSchemas(yamlFiles: string[]): Promise<ValidationIssue[]> {
-  const issues: ValidationIssue[] = [];
-  for (const file of yamlFiles) {
-    try {
-      const contents = await readTextFile(file);
-      NormalizedYamlSchema.parse(parseYaml(contents));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        for (const issue of error.issues) {
-          issues.push({
-            severity: 'error',
-            type: 'schema',
-            message: `${formatZodPath(issue)} - ${issue.message}`,
-            file,
-          });
-        }
-      } else {
-        issues.push({
-          severity: 'error',
-          type: 'schema',
-          message: (error as Error).message,
-          file,
-        });
-      }
-    }
-  }
-  return issues;
 }
 
 async function lintFeatureFiles(featureFiles: string[], configPath: string): Promise<ValidationIssue[]> {
@@ -289,8 +259,7 @@ function extractFileFromCoverageMessage(message: string): string {
 }
 
 interface SelectorValidationOptions {
-  normalizedDir: string;
-  featuresDir: string;
+  graphDir: string;
   selectorsPath: string;
   reportPath: string;
 }
@@ -301,8 +270,7 @@ async function runSelectorValidation(options: SelectorValidationOptions): Promis
   }
 
   return validateSelectors({
-    normalizedDir: options.normalizedDir,
-    featuresDir: options.featuresDir,
+    graphDir: options.graphDir,
     registryPath: options.selectorsPath,
     reportPath: options.reportPath,
   });
@@ -332,12 +300,12 @@ function determineExitCode(summary: ValidationSummary): ExitCode {
 interface BuildReportParams {
   issues: ValidationIssue[];
   summary: ValidationSummary;
-  yamlFiles: string[];
+  graphFiles: string[];
   featureFiles: string[];
 }
 
 function buildCiReport(params: BuildReportParams): ValidationReport {
-  const checkedFiles = new Set<string>([...params.yamlFiles, ...params.featureFiles]);
+  const checkedFiles = new Set<string>([...params.graphFiles, ...params.featureFiles]);
   const failedFiles = new Set(
     params.issues
       .map((issue) => issue.file?.trim())
@@ -355,7 +323,7 @@ function buildCiReport(params: BuildReportParams): ValidationReport {
 }
 
 interface PackageArtifactsOptions {
-  normalizedDir: string;
+  graphDir: string;
   featuresDir: string;
   selectorsPath: string;
   selectorReportPath: string;
@@ -367,7 +335,7 @@ async function packageArtifacts(options: PackageArtifactsOptions): Promise<strin
   await fs.rm(options.artifactsArchiveDir, { recursive: true, force: true });
   await ensureDir(options.artifactsArchiveDir);
 
-  await copyIfExists(options.normalizedDir, path.join(options.artifactsArchiveDir, 'normalized'));
+  await copyIfExists(options.graphDir, path.join(options.artifactsArchiveDir, 'graph'));
   await copyIfExists(options.featuresDir, path.join(options.artifactsArchiveDir, 'features'));
 
   const artifactDir = path.join(options.artifactsArchiveDir, 'artifacts');
@@ -417,13 +385,6 @@ async function findFiles(root: string, extension: string): Promise<string[]> {
     }
   }
   return files;
-}
-
-function formatZodPath(issue: ZodIssue): string {
-  if (!issue.path || issue.path.length === 0) {
-    return 'root';
-  }
-  return issue.path.join('.');
 }
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {

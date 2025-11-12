@@ -8,213 +8,77 @@ globs:
 
 ## Overview
 
-The testing pipeline consists of TypeScript modules in `tests/scripts/` with CLI wrappers. Each stage has dedicated validation and error handling.
+Pipeline automation lives entirely under `tests/scripts/`. Each module owns a clear responsibility and exposes CLI adapters so human authors and automation jobs share the same logic.
 
 ## Pipeline Architecture
-
-```
-Plain Text Spec ──┐
-                  │  yarn spec:questions         ┌─────────────────────┐
-                  ├─> Clarification Markdown ───►│ generate-questions  │
-                  │                              └─────────────────────┘
-                  │  yarn spec:normalize         ┌─────────────────────┐
-                  ├─> Normalized YAML ──────────►│ normalize-yaml      │
-Selector Registry │                              └─────────────────────┘
-                  │  yarn spec:validate-and-fix  ┌─────────────────────┐
-(Optional Gate)   ├─> Selector Validation ──────►│ validate-and-fix    │
-                  │                              └─────────────────────┘
-                  │  yarn spec:features          ┌─────────────────────┐
-Step Vocabulary   ├─> Gherkin Features ─────────►│ generate-features   │
-                  │                              └─────────────────────┘
-                  │  yarn spec:ci-verify         ┌─────────────────────┐
-                  └─> CI Verification ─────────►│ ci-verify            │
-└─────────────────────┘
-```
-
-## Stagehand-first CLI Flow
 
 ```
 Plain Text Spec ───► yarn bdd record ───► Stagehand action graph ───► compile (features + steps) ───► Playwright execution
 ```
 
-`yarn bdd record` (see `tests/scripts/cli-bdd.ts`) parses the natural-language spec, drives Stagehand step-by-step (`tests/scripts/stagehand/pipeline.ts`), persists the deterministic graph to `tests/artifacts/graph/`, and hands the graph to `action-graph/compiler.ts` to emit stable `.feature` and `.steps.ts` artifacts. Use `--dry-run` to walk Stagehand without writing files, `--skip-compile` to persist only the graph, and `--base-url` to override the navigation target.
+Stagehand records deterministic actions, persists the graph (`tests/artifacts/graph/`), and uses `action-graph/compiler.ts` to drive Playwright when the tests run.
+
+## Stagehand-first CLI Flow
+
+`yarn bdd record` (see `tests/scripts/cli-bdd.ts`) parses natural-language specs, walks Stagehand step-by-step (`tests/scripts/stagehand/pipeline.ts`), stores the resulting action graph, and compiles `.feature` + `.steps.ts` outputs. Add `--dry-run` to inspect the graph without persistence, `--skip-compile` to stop early, or `--base-url` to override `E2E_BASE_URL`.
 
 | Stage | Module(s) | CLI Command | Responsibility |
 |-------|-----------|-------------|----------------|
-| Spec parsing + Stagehand recording | `tests/scripts/stagehand/pipeline.ts`, `tests/scripts/stagehand/recorder.ts` | `yarn bdd record` (`tests/scripts/cli-bdd.ts`) | Transform plain-text spec into an action graph with deterministic instructions and metadata |
-| Graph persistence | `tests/scripts/action-graph/persistence.ts` | (implicitly invoked) | Versioned storage under `tests/artifacts/graph/`, enabling repeatable runs and history |
-| Graph compilation | `tests/scripts/action-graph/compiler.ts` | `yarn spec:compile-graph` (also used by `bdd record`) | Generate `.feature` files under `tests/features/compiled/` and step definitions under `tests/steps/generated/` for deterministic CI |
-| Deterministic execution | `tests/scripts/ci-policy.ts`, Playwright tests | `yarn ci:policy`, `yarn test` | Assert that CI runs only against pre-generated artifacts (features, steps, selectors) and runs Playwright deterministically |
-
-Stagehand output supports the rest of the deterministic pipeline: pre-generated selectors are reused by `spec:collect-selectors`/`spec:selector-drift`, and CI verification (`spec:ci-verify`) still lints features and validates coverage/selector alignment before Playwright runs.
+| Stagehand recording | `tests/scripts/stagehand/pipeline.ts`, `tests/scripts/stagehand/recorder.ts` | `yarn bdd record` | Turn a plain-text spec into a deterministic action graph enriched with selectors and execution metadata. |
+| Graph persistence | `tests/scripts/action-graph/persistence.ts` | (implicit) | Persist versioned graphs under `tests/artifacts/graph/` so CI replays the exact recorded actions. |
+| Graph compilation | `tests/scripts/action-graph/compiler.ts` | `yarn bdd compile` | Convert the deterministic graph into `.feature` files and playable step definitions for Playwright. |
+| Selector hygiene | `tests/scripts/collect-selectors.ts` | `yarn spec:collect-selectors` | Scan live routes with Playwright and refresh `tests/artifacts/selectors/registry.json`. |
+| Drift validation | `tests/scripts/selector-drift.ts` | `yarn spec:selector-drift` | Compare fresh scans to the committed registry; report missing/updated selectors and optionally sync. |
+| Validation & CI | `tests/scripts/validate-selectors.ts`, `tests/scripts/validate-coverage.ts`, `tests/scripts/ci-verify.ts` | `yarn bdd verify` | Ensure features step coverage, selectors, linting, and secret scans pass before Playwright runs. |
 
 ### Umbrella CLI `yarn bdd`
 
-The `tests/scripts/cli-bdd.ts` entry point now wires together the bootstrap, authoring, compilation, execution, and verification helpers described below. Each subcommand provides friendly reporting, enforces non-zero exit codes, and routes to the shared cores in `tests/scripts/cli/` where applicable.
+`tests/scripts/cli-bdd.ts` wires together bootstrap, Stagehand recording, compilation, execution, and verification. The subcommands share the same cores for friendly reporting and consistent error handling.
 
 | Command | Module(s) | Responsibility |
 |---------|-----------|----------------|
-| `yarn bdd init` | `tests/scripts/cli-bdd.ts` | Ensures the artifact and cache directories exist (`tests/artifacts/**`, `tests/features/compiled`, `tests/steps/generated`, `tests/tmp/stagehand-cache`) and bootstraps `.env.local` from `.env.example`. |
-| `yarn bdd compile <graph.json...>` | `tests/scripts/cli-bdd.ts`, `tests/scripts/cli/compile-graph-core.ts`, `tests/scripts/action-graph/compiler.ts` | Compiles saved action graphs into deterministic `.feature` and `.steps.ts` artifacts (supports `--dry-run`, `--no-metadata`, `--feature-dir`, and `--steps-dir`). |
-| `yarn bdd run [playwright args]` | `tests/scripts/cli-bdd.ts` | Proxies to `yarn test`, forwarding any Playwright flags (`--headed`, `--grep`, etc.) so the suite runs with the latest compiled artifacts. |
-| `yarn bdd verify [--normalized <dir>]...` | `tests/scripts/cli-bdd.ts`, `tests/scripts/cli/ci-verify-core.ts`, `tests/scripts/ci-verify.ts` | Wraps `runCiVerification`, reusing the same CLI flags as `spec:ci-verify`, and surfaces the canonical exit codes for schema/lint/coverage/selector/secret checks. |
-
-Run `yarn bdd help` at any time to see the full command reference.
-
-## When to Invoke Oracle
-
-For pipeline work, consider using Oracle when:
-- Designing new pipeline stages or validation logic
-- Debugging complex script failures or edge cases
-- Reviewing performance bottlenecks in the pipeline
-- Planning major refactoring of CLI tools
-
-Example: "Use Oracle to review this pipeline architecture for performance and maintainability"
+| `yarn bdd init` | `tests/scripts/cli-bdd.ts` | Create artifact directories and optionally bootstrap `.env.local`. |
+| `yarn bdd record <spec>` | `tests/scripts/cli-bdd.ts`, `stagehand/pipeline.ts`, `action-graph/compiler.ts` | Run Stagehand, persist the graph, and compile features/steps. |
+| `yarn bdd compile <graph>` | `tests/scripts/cli/compile-graph-core.ts` | Turn saved graphs into deterministic artifacts with metadata controls. |
+| `yarn bdd run` | `tests/scripts/cli-bdd.ts` | Proxy to `yarn test`, ensuring Playwright executes the latest compiled outputs. |
+| `yarn bdd verify` | `tests/scripts/cli/ci-verify-core.ts`, `tests/scripts/ci-verify.ts` | Run lint, coverage, selector, and secret scans; package artifacts. |
 
 ## CLI Entry Points
 
 | Stage | Module | CLI Command | Responsibility |
 |-------|--------|-------------|----------------|
-| Questions | `generate-questions.ts` | `yarn spec:questions` | Render prompts, call LLM, persist Q&A markdown |
-| Normalization | `normalize-yaml.ts` | `yarn spec:normalize` | Convert spec + clarifications into schema-validated YAML |
-| Validation | `validate-and-fix-selectors.ts` | `yarn spec:validate-and-fix` | Validate selectors against live app, emit reports |
-| Features | `generate-features.ts` | `yarn spec:features` | Produce `.feature` files with vocabulary coverage |
-| Graph compile | `action-graph/compiler.ts` | `yarn spec:compile-graph` | Convert action graphs into `.feature` + deterministic step defs |
-| CI Verify | `ci-verify.ts` | `yarn spec:ci-verify` | Aggregate validation checks, bundle artifacts |
-
-## LLM Provider Abstraction
-
-```typescript
-interface LLMCompletionOptions {
-  model: string;
-  temperature?: number;
-  maxTokens?: number;
-  timeoutMs?: number;
-}
-
-abstract class LLMProvider {
-  abstract generateCompletion(
-    prompt: string,
-    options: LLMCompletionOptions
-  ): Promise<LLMCompletionResult>;
-}
-```
-
-## Performance Optimizations
-
-### Differential Caching
-- SHA-256 hash of clarifications content
-- Cache hit rate: 60-80% for iterative refinement
-- Force regeneration: `--force` flag
-
-### Parallel Batch Processing
-- Dynamic worker pools: `(CPU cores - 1)`
-- Reuses LLM provider instances
-- 3-4× faster for 10-spec workloads
-
-### Parameter Tuning
-- Temperature: 0.1 for deterministic outputs
-- Max tokens: 3000, timeout: 120s
-- Override via environment variables
-
-## Error Handling
-
-### Exit Codes
-- `0`: Success
-- `2`: Schema validation failed
-- `3`: Gherkin lint failed
-- `4`: Step coverage failed
-- `5`: Selector validation failed
-- `6`: Secret scan failed
-- `7`: Verification timeout
-- `9`: Unknown error
-
-### Retry Logic
-- Exponential backoff for transient failures
-- Non-retriable codes bubble up immediately
-- Configurable timeout and retry limits
-
-## When to Ask Librarian
-
-"Use Librarian to research CLI tool patterns in Node.js testing frameworks"
-
-"Ask Librarian about error handling patterns in TypeScript CLI applications"
+| Stagehand recording | `stagehand/pipeline.ts` | `yarn bdd record` | Capture Stagehand actions and deterministic selectors for each spec. |
+| Graph compilation | `action-graph/compiler.ts` | `yarn bdd compile`, `yarn bdd record` | Emit `.feature` and `.steps.ts` artifacts from action graphs. |
+| Selector collection | `collect-selectors.ts` | `yarn spec:collect-selectors` | Refresh the selector registry via Playwright exploration. |
+| Selector drift | `selector-drift.ts` | `yarn spec:selector-drift` | Detect missing/updated selectors compared to the registry. |
+| Selector validation | `validate-selectors.ts` | Indirectly used by `yarn bdd verify` | Ensure every selector referenced in the graphs exists in the registry. |
+| Coverage validation | `validate-coverage.ts` | Indirectly used by `yarn bdd verify` | Guarantee every feature step matches the approved vocabulary. |
+| CI verification | `ci-verify.ts` | `yarn bdd verify` | Aggregate lint, coverage, selectors, secrets, and artifact bundling checks. |
 
 ## Shared Utilities
 
-Located in `tests/scripts/utils/`:
-- `file-operations.ts` - File I/O helpers
-- `hash.ts` - Content hashing for caching
-- `yaml-parser.ts` - YAML processing with validation
-- `benchmark-runner.ts` - Performance measurement
+Shared helpers live under `tests/scripts/utils/`:
+- `file-operations.ts` — Cross-platform I/O, directory scaffolding, JSON helpers.
+- `yaml-parser.ts` — YAML parsing/serialization used by selectors and configs.
+- `concurrent.ts` — Utility for running tasks in parallel (used by Stagehand recording).
+- `logging.ts` — Structured JSON logging for CLI commands.
+- `secret-scanner.ts` — Secret detection used by CI verification.
 
 ## Configuration Management
 
-- Environment variables for LLM settings
-- Zod schemas for runtime validation
-- JSON schemas for artifact validation
-- Tool configurations (gherkinlint, etc.)
+- Environment variables drive Stagehand cache dirs, `MOCK_LOGIN_APP`, and Playwright targets.
+- Zod schemas in `tests/scripts/types/` define contracts for graphs, selectors, and validation reports.
+- JSON schemas under `tests/schemas/` describe artifacts that must stay deterministic.
 
-## Oracle + Librarian Workflow
+## Workflow Guidelines
 
-### Example: Adding Pipeline Stage
-
-**Step 1: Research (Librarian)**
-```
-"Use Librarian to research pipeline patterns in similar testing frameworks.
-Search: cypress, webdriverio repos
-Focus on: stage orchestration, error handling"
-```
-
-**Step 2: Design (Oracle)**
-```
-"Based on Librarian's findings, use Oracle to design our new pipeline stage:
-- Integration points with existing stages
-- Error handling and validation
-- Performance considerations"
-```
-
-**Step 3: Implement (Main Agent)**
-```
-"Implement the new pipeline stage based on Oracle's design.
-Add CLI wrapper and integrate with existing pipeline."
-```
-
-**Step 4: Test (Oracle)**
-```
-"Use Oracle to review the pipeline integration:
-- Stage sequencing and dependencies
-- Error propagation and handling
-- Performance impact on overall pipeline"
-```
+- Use `yarn bdd record` for authoring specs from `tests/qa-specs/`.
+- Commit generated artifacts (`tests/artifacts/graph/`, `tests/features/compiled/`, `tests/steps/generated/`) alongside pipeline code.
+- Run `yarn bdd verify` before `yarn test` to avoid CI failures.
+- Collect selectors via `yarn spec:collect-selectors` whenever UI selectors change.
 
 ## Best Practices
 
-- Use TypeScript for all pipeline code
-- Implement comprehensive error handling
-- Add progress reporting for long-running operations
-- Validate inputs and outputs at each stage
-- Document CLI options and exit codes
-- Test pipeline stages independently
-
-## Common Issues
-
-### LLM Provider Errors
-- Check API keys and quotas
-- Verify network connectivity
-- Switch providers if needed
-
-### Schema Validation Failures
-- Review Zod schemas in `tests/scripts/types/`
-- Check input data format
-- Update schemas for new requirements
-
-### File Operation Errors
-- Verify file permissions
-- Check path separators (cross-platform)
-- Handle concurrent file access
-
-### Performance Degradation
-- Monitor cache hit rates
-- Check parallel processing settings
-- Profile LLM request times
+- Keep TypeScript code small and focused to minimize review bite size.
+- Validate new stages with dedicated tests under `tests/__tests__/`.
+- Document architecture changes in `tests/docs/` instead of relying on ad-hoc markdown files.

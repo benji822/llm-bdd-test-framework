@@ -9,37 +9,37 @@ globs:
 
 ## Overview
 
-CI pipelines validate pre-generated artifacts deterministically—no LLM calls in CI. The `ci-verify` command aggregates multiple validation gates.
+CI pipelines verify stagehand-generated artifacts deterministically. `yarn bdd verify` aggregates feature linting, vocabulary coverage, selector validation, secret scanning, and artifact bundling, ensuring Playwright only depends on pre-built assets.
 
-## When to Invoke Oracle
+## `yarn bdd verify` checks
 
-For CI/CD work, consider using Oracle when:
-- Designing CI pipeline architecture
-- Debugging complex CI failures
-- Reviewing performance bottlenecks
-- Planning major CI refactoring
+1. **Gherkin lint** on features under `tests/features/compiled/`.
+2. **Vocabulary coverage** via `tests/artifacts/step-vocabulary.json`.
+3. **Selector validation** against `tests/artifacts/graph/` and the registry (`tests/artifacts/selectors/registry.json`).
+4. **Secret scanning** for committed artifacts and validation reports.
+5. **Artifact bundling** under `tests/artifacts/ci-bundle/`.
 
-Example: "Use Oracle to review this CI pipeline for efficiency and reliability"
+Exit codes provide clarity:
 
-## CI Verification Process
-
-`yarn spec:ci-verify` performs:
-
-1. **Schema validation** for all YAML specs
-2. **Gherkin linting** across generated `.feature` files
-3. **Vocabulary coverage** checks
-4. **Selector reconciliation** against registry
-5. **Secret scanning** to prevent credential leaks
-6. **Artifact packaging** under `tests/artifacts/ci-bundle/`
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `3` | Gherkin lint failed |
+| `4` | Step coverage failed |
+| `5` | Selector validation failed |
+| `6` | Secret scan failed |
+| `7` | Verification timeout |
+| `9` | Unknown error |
 
 ## CI Policy Guard
 
-`yarn ci:policy` (also wired into the lifecycle via `pretest`) runs immediately before `yarn test` and refuses to proceed when the deterministic preconditions are not met. On CI it:
+`yarn ci:policy` (also wired into the `pretest` hook) ensures deterministic preconditions on every node:
 
-- Fails if `AUTHORING_MODE` or `MOCK_LOGIN_APP` is enabled so Stagehand/LLM authoring cannot leak into the pipeline.
-- Validates that `tests/normalized/`, `tests/features/`, and `tests/steps/generated/` contain the compiled artifacts and step definitions CI relies on.
+- `AUTHORING_MODE` and `MOCK_LOGIN_APP` must remain disabled in CI.
+- `tests/artifacts/graph/`, `tests/features/compiled/`, and `tests/steps/generated/` must contain compiled artifacts before tests run.
+- `tests/artifacts/selectors/registry.json` must exist so selectors stay consistent.
 
-The guard gives clear errors when the pipeline needs to regenerate artifacts or the wrong knobs are set, keeping the CI job deterministic and Stagehand-free.
+The policy throws descriptive errors when a required artifact is missing or a forbidden flag is enabled.
 
 ## GitHub Actions Example
 
@@ -68,8 +68,8 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Verify test artifacts
-        run: yarn spec:ci-verify
+      - name: Validate artifacts
+        run: yarn bdd verify
 
       - name: Run Playwright tests
         run: yarn test
@@ -78,7 +78,7 @@ jobs:
           E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
           E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 
-      - name: Upload artifacts
+      - name: Upload artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -86,144 +86,8 @@ jobs:
           path: playwright-report/
 ```
 
-## Exit Codes
-
-| Code | Meaning | Action Required |
-|------|---------|-----------------|
-| `0` | Success | None |
-| `2` | Schema validation failed | Fix YAML structure |
-| `3` | Gherkin lint failed | Fix `.feature` files |
-| `4` | Step coverage failed | Add missing step implementations |
-| `5` | Selector validation failed | Update selector registry |
-| `6` | Secret scan failed | Remove secrets from committed files |
-| `7` | Verification timeout | Optimize pipeline performance |
-| `9` | Unknown error | Investigate logs |
-
-## Validation Gates
-
-### Schema Validation
-- Validates YAML specs against Zod schemas
-- Ensures required fields and correct types
-- Catches structural issues early
-
-### Gherkin Linting
-- Enforces consistent formatting
-- Validates step syntax and parameters
-- Configurable rules in `tests/config/`
-
-### Vocabulary Coverage
-- Ensures all steps match approved patterns
-- Prevents unsupported step implementations
-- Maintains test consistency
-
-### Selector Reconciliation
-- Verifies all referenced selectors exist
-- Checks accessibility and stability
-- Updates registry metadata
-
-### Secret Scanning
-- Prevents credential leaks
-- Scans all text artifacts
-- Configurable patterns
-
-## When to Ask Librarian
-
-"Use Librarian to research CI/CD patterns for testing frameworks"
-
-"Ask Librarian about GitHub Actions best practices for Node.js projects"
-
-## Performance Optimization
-
-### Caching Strategy
-- Yarn cache for dependencies
-- Playwright browser cache
-- LLM response cache for local development
-
-### Parallel Execution
-- Matrix builds for multiple Node versions
-- Parallel test execution with Playwright
-- Concurrent artifact validation
-
-### Artifact Management
-- Upload failure artifacts automatically
-- Cache intermediate results
-- Clean up old artifacts
-
-## Oracle + Librarian Workflow
-
-### Example: Optimizing CI Pipeline
-
-**Step 1: Research (Librarian)**
-```
-"Use Librarian to research CI optimization patterns for testing frameworks.
-Search: GitHub Actions, CircleCI, Jenkins
-Focus on: caching strategies, parallel execution"
-```
-
-**Step 2: Analyze (Oracle)**
-```
-"Based on Librarian's findings, use Oracle to analyze our CI bottlenecks:
-- Identify slowest stages
-- Review caching effectiveness
-- Suggest parallelization opportunities"
-```
-
-**Step 3: Implement (Main Agent)**
-```
-"Implement Oracle's CI optimizations.
-Update GitHub Actions workflow and pipeline scripts."
-```
-
-**Step 4: Validate (Oracle)**
-```
-"Use Oracle to review the optimized CI pipeline:
-- Performance improvements
-- Reliability impact
-- Maintenance overhead"
-```
-
 ## Best Practices
 
-- Commit generated artifacts for determinism
-- Use matrix builds for comprehensive testing
-- Implement proper error handling and retries
-- Monitor CI performance metrics
-- Keep secrets in environment variables
-- Use conditional artifact uploads
-
-## Troubleshooting
-
-### CI Verification Failures
-- Run `yarn spec:ci-verify` locally first
-- Check exit codes for specific failure types
-- Review validation output for details
-
-### Test Execution Issues
-- Verify environment variables are set
-- Check app availability at `E2E_BASE_URL`
-- Review Playwright configuration
-
-### Performance Issues
-- Monitor cache hit rates
-- Check parallel execution settings
-- Profile individual pipeline stages
-
-### Artifact Upload Problems
-- Verify artifact paths exist
-- Check file permissions
-- Review GitHub Actions storage limits
-
-## Security Considerations
-
-- Never commit secrets or credentials
-- Use GitHub secrets for sensitive data
-- Implement secret scanning in CI
-- Regularly rotate API keys
-- Audit CI pipeline access
-
-## Monitoring and Metrics
-
-- Track CI execution times
-- Monitor failure rates by stage
-- Measure cache effectiveness
-- Alert on performance regressions
+- Commit generated artifacts (`tests/artifacts/graph/`, `tests/features/compiled/`, `tests/steps/generated/`, selectors) so CI never replays Stagehand.
+- Run `yarn bdd verify` locally before pushing; the same exit codes surface as CI.
+- Keep `MOCK_LOGIN_APP` and `AUTHORING_MODE` disabled when preparing artifacts for CI.

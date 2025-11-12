@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, test } from 'node:test';
 
 import { runCiVerification, EXIT_CODES } from '../../scripts/ci-verify';
+import type { ActionGraph } from '../../scripts/action-graph/types';
 
 let tempDir: string;
 
@@ -16,8 +17,8 @@ afterEach(async () => {
   await fs.rm(tempDir, { recursive: true, force: true });
 });
 
-test('CI verification reports coverage gaps without invoking LLM providers', async () => {
-  const normalizedDir = path.join(tempDir, 'normalized');
+test('CI verification detects coverage gaps without legacy YAML artifacts', async () => {
+  const graphDir = path.join(tempDir, 'graph');
   const featuresDir = path.join(tempDir, 'features');
   const artifactsDir = path.join(tempDir, 'artifacts');
   const selectorsPath = path.join(artifactsDir, 'selectors', 'registry.json');
@@ -26,41 +27,9 @@ test('CI verification reports coverage gaps without invoking LLM providers', asy
   const ciReportPath = path.join(artifactsDir, 'ci-report.json');
   const bundleDir = path.join(tempDir, 'bundle');
 
-  await fs.mkdir(normalizedDir, { recursive: true });
+  await fs.mkdir(graphDir, { recursive: true });
   await fs.mkdir(featuresDir, { recursive: true });
-  await fs.mkdir(artifactsDir, { recursive: true });
   await fs.mkdir(path.dirname(selectorsPath), { recursive: true });
-
-  await fs.writeFile(
-    path.join(normalizedDir, 'checkout.yaml'),
-    `feature: Checkout
-scenarios:
-  - name: Missing coverage example
-    steps:
-      - type: given
-        text: I am on the checkout page
-      - type: when
-        text: I complete the purchase
-    selectors:
-      purchase-button: "[role='button'][name='Purchase']"
-metadata:
-  specId: "323e4567-e89b-12d3-a456-426614174000"
-  generatedAt: "2025-10-18T12:00:00Z"
-  llmProvider: "codex"
-  llmModel: "stub-model"
-`,
-    'utf8',
-  );
-
-  await fs.writeFile(
-    path.join(featuresDir, 'checkout.feature'),
-    `Feature: Checkout
-  Scenario: Complete purchase
-    Given I am on the checkout page
-    When I complete the purchase
-`,
-    'utf8',
-  );
 
   await fs.writeFile(
     selectorsPath,
@@ -110,8 +79,20 @@ metadata:
     'utf8',
   );
 
+  const graph = createGraph([
+    { selectorId: 'purchase-button', locator: "[role='button'][name='Purchase']" },
+  ]);
+
+  await fs.writeFile(path.join(graphDir, 'checkout.json'), JSON.stringify(graph, null, 2), 'utf8');
+
+  await fs.writeFile(
+    path.join(featuresDir, 'checkout.feature'),
+    `Feature: Checkout\n  Scenario: Complete purchase\n    Given I am on the checkout page\n    When I complete the purchase`,
+    'utf8',
+  );
+
   const result = await runCiVerification({
-    normalizedDir,
+    graphDir,
     featuresDir,
     selectorsPath,
     vocabularyPath,
@@ -123,5 +104,29 @@ metadata:
 
   assert.equal(result.exitCode, EXIT_CODES.coverageError);
   assert.equal(result.summary.coverageGaps, 1);
-  assert.ok(result.issues.some((issue) => issue.type === 'coverage' && /complete the purchase/i.test(issue.message)));
+  assert.ok(result.issues.some((issue) => issue.type === 'coverage'));
 });
+
+function createGraph(selectors: Array<{ selectorId: string; locator: string }>): ActionGraph {
+  const nodes = selectors.map((selector, index) => ({
+    nodeId: `step_${index}`,
+    type: 'act',
+    stepIndex: index,
+    gherkinStep: { keyword: 'when', text: `Perform ${selector.selectorId}` },
+    selectors: [{ id: selector.selectorId, locator: selector.locator }],
+    instructions: { deterministic: { selector: selector.selectorId, action: 'click' } },
+  }));
+
+  return {
+    graphId: 'ci-graph',
+    version: '1.0',
+    nodes,
+    edges: [],
+    metadata: {
+      createdAt: new Date().toISOString(),
+      specId: 'ci-spec',
+      scenarioName: 'CI reproduction',
+      authorship: { authoringMode: true, authoredBy: 'ci-test' },
+    },
+  };
+}

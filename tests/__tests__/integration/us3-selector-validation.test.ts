@@ -10,6 +10,7 @@ import {
   type ExtractedSelector,
 } from '../../scripts/collect-selectors';
 import { validateSelectors } from '../../scripts/validate-selectors';
+import type { ActionGraph } from '../../scripts/action-graph/types';
 
 let tempDir: string;
 
@@ -21,33 +22,13 @@ afterEach(async () => {
   await fs.rm(tempDir, { recursive: true, force: true });
 });
 
-test('collect selectors then validate normalized YAML using updated registry', async () => {
-  const normalizedDir = path.join(tempDir, 'normalized');
-  await fs.mkdir(normalizedDir, { recursive: true });
-  await fs.writeFile(
-    path.join(normalizedDir, 'cart.yaml'),
-    `feature: Shopping cart
-scenarios:
-  - name: Apply discount
-    steps:
-      - type: given
-        text: I am on the cart page
-      - type: then
-        text: I should see text "Discount applied"
-    selectors:
-      discount-banner: "div[aria-label='Discount applied']"
-      apply-discount: "[data-testid='apply-discount']"
-metadata:
-  specId: "66666666-6666-6666-6666-666666666666"
-  generatedAt: "2025-10-18T12:30:00Z"
-  llmProvider: "codex"
-  llmModel: "stub-model"
-`,
-    'utf8',
-  );
-
-  const registryPath = path.join(tempDir, 'selectors', 'registry.json');
+test('collect selectors then validate deterministically generated graph', async () => {
+  const selectorsPath = path.join(tempDir, 'selectors', 'registry.json');
   const reportPath = path.join(tempDir, 'artifacts/report.json');
+  const graphDir = path.join(tempDir, 'graph');
+
+  await fs.mkdir(path.dirname(selectorsPath), { recursive: true });
+  await fs.mkdir(graphDir, { recursive: true });
 
   const extractedSelectors = new Map([
     [
@@ -55,16 +36,16 @@ metadata:
       [
         {
           id: 'discount-banner',
-          type: 'label' as const,
+          type: 'label',
           selector: "[aria-label='Discount applied']",
-          priority: 2 as const,
+          priority: 2,
           accessible: true,
         },
         {
           id: 'apply-discount',
-          type: 'testid' as const,
+          type: 'testid',
           selector: "[data-testid='apply-discount']",
-          priority: 3 as const,
+          priority: 3,
           accessible: false,
         },
       ],
@@ -93,21 +74,46 @@ metadata:
   await collectSelectors({
     baseUrl: 'https://example.com',
     routes: ['/'],
-    outputPath: registryPath,
+    outputPath: selectorsPath,
     browserFactory,
     now: () => new Date('2025-10-18T00:00:00Z'),
   });
 
-  const report = await validateSelectors({
-    normalizedDir,
-    registryPath,
-    reportPath,
-  });
+  const registry = JSON.parse(await fs.readFile(selectorsPath, 'utf8'));
+  assert.ok(registry.selectors['discount-banner']);
 
-  assert.deepEqual(visits, ['/']);
+  const graph = createGraph([
+    { selectorId: 'discount-banner', locator: "[aria-label='Discount applied']" },
+    { selectorId: 'apply-discount', locator: "[data-testid='apply-discount']" },
+  ]);
+
+  await fs.writeFile(path.join(graphDir, 'spec.json'), JSON.stringify(graph, null, 2), 'utf8');
+
+  const report = await validateSelectors({ graphDir, registryPath: selectorsPath, reportPath });
   assert.equal(report.issues.length, 0);
-  const stored = JSON.parse(await fs.readFile(registryPath, 'utf8'));
-  assert.ok(stored.selectors['discount-banner']);
-  const storedReport = JSON.parse(await fs.readFile(reportPath, 'utf8'));
-  assert.equal(storedReport.failed, 0);
+  assert.equal(report.summary.selectorMismatches, 0);
 });
+
+function createGraph(selectors: Array<{ selectorId: string; locator: string }>): ActionGraph {
+  const nodes = selectors.map((selector, index) => ({
+    nodeId: `step_${index}`,
+    type: 'act',
+    stepIndex: index,
+    gherkinStep: { keyword: 'when', text: `Interact with ${selector.selectorId}` },
+    selectors: [{ id: selector.selectorId, locator: selector.locator }],
+    instructions: { deterministic: { selector: selector.selectorId, action: 'click' } },
+  }));
+
+  return {
+    graphId: 'integration-graph',
+    version: '1.0',
+    nodes,
+    edges: [],
+    metadata: {
+      createdAt: new Date().toISOString(),
+      specId: 'integration-spec',
+      scenarioName: 'Integration scenario',
+      authorship: { authoringMode: true, authoredBy: 'integration-test' },
+    },
+  };
+}

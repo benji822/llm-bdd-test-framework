@@ -1,11 +1,11 @@
 /**
- * CI policy guard to keep the deterministic pipeline honest.
+ * CI policy guard to keep the deterministic Stagehand pipeline honest.
  *
  * Runs before `yarn test` (via the `pretest` hook) and can be invoked manually
  * with `yarn ci:policy`. When CI is detected, this script insists that
  * `AUTHORING_MODE` and `MOCK_LOGIN_APP` are disabled and that the compiled
- * artifacts we rely on exist. It also ensures the normalized specs directory is
- * populated so we never run Playwright tests without pre-generated fixtures.
+ * artifacts we rely on exist (stagehand graphs, compiled features, and step
+ * definitions) so Playwright only runs against pre-generated fixtures.
  */
 
 import fs from 'node:fs';
@@ -78,7 +78,7 @@ function containsFilesWithExtensions(directory: string, extensions: string[]): b
 
 function ensureArtifactsExist() {
   const lookup = [
-    { dir: 'tests/normalized', description: 'normalized YAML specs', exts: ['.yaml', '.yml'] },
+    { dir: 'tests/artifacts/graph', description: 'stagehand action graphs', exts: ['.json'] },
     { dir: 'tests/features', description: 'compiled `.feature` files', exts: ['.feature'] },
     { dir: 'tests/steps/generated', description: 'generated step definitions', exts: ['.ts', '.js'] },
   ];

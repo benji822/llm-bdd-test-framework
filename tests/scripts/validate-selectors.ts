@@ -1,125 +1,127 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { readTextFile, ensureDir, writeTextFile } from './utils/file-operations';
-import type { SelectorRegistry, SelectorEntry } from './types/selector-registry';
-import { NormalizedYamlSchema, type NormalizedYaml } from './types/yaml-spec';
-import { parseYaml } from './utils/yaml-parser';
-import type { ValidationReport, ValidationIssue } from './types/validation-report';
-import { resolveRegistryPath, readSelectorRegistry } from './selector-registry';
+import { ensureDir, readTextFile, writeTextFile } from './utils/file-operations';
+import type { SelectorRegistry } from './types/selector-registry';
+import { readSelectorRegistry, resolveRegistryPath } from './selector-registry';
+import type { ValidationIssue, ValidationReport } from './types/validation-report';
 
 interface ValidateSelectorsOptions {
-  normalizedDir: string;
-  featuresDir?: string;
+  graphDir?: string;
   registryPath?: string;
   reportPath?: string;
 }
 
+const DEFAULT_GRAPH_DIR = path.resolve('tests/artifacts/graph');
 const DEFAULT_REGISTRY_PATH = resolveRegistryPath();
 const DEFAULT_REPORT_PATH = path.resolve('tests/artifacts/validation-report.json');
 
-export async function validateSelectors(options: ValidateSelectorsOptions): Promise<ValidationReport> {
-  const {
-    normalizedDir,
-    featuresDir,
-    registryPath = DEFAULT_REGISTRY_PATH,
-    reportPath = DEFAULT_REPORT_PATH,
-  } = options;
+type SelectorIssue = {
+  selectorId: string;
+  graph: string;
+};
 
-  const registry = await loadRegistry(registryPath);
+export async function validateSelectors(options: ValidateSelectorsOptions): Promise<ValidationReport> {
+  const graphDir = path.resolve(options.graphDir ?? DEFAULT_GRAPH_DIR);
+  const registry = await loadRegistry(options.registryPath);
+  const reportPath = path.resolve(options.reportPath ?? DEFAULT_REPORT_PATH);
+
+  const graphFiles = await findFiles(graphDir, '.json');
   const issues: ValidationIssue[] = [];
 
-  const yamlFiles = await findFiles(normalizedDir, '.yaml');
-  for (const file of yamlFiles) {
-    const yamlContent = await readTextFile(file);
-    const normalized = NormalizedYamlSchema.parse(parseYaml<NormalizedYaml>(yamlContent));
-    const selectorsByLine = indexYamlSelectors(yamlContent);
-
-    for (const scenario of normalized.scenarios) {
-      for (const [selectorId] of Object.entries(scenario.selectors ?? {})) {
-        const normalizedId = selectorId.toLowerCase();
-        if (!registry.selectors[normalizedId]) {
-          issues.push({
-            severity: 'error',
-            type: 'selector',
-            message: `Selector '${selectorId}' not found in registry.`,
-            file,
-            line: selectorsByLine.get(selectorId),
-            suggestion: suggestAlternative(registry.selectors),
-          });
-        }
-      }
-    }
+  for (const file of graphFiles) {
+    const content = await readTextFile(file);
+    const graph = JSON.parse(content) as { nodes?: Array<{ selectors?: Array<{ id?: string }>; instructions?: { deterministic?: { selector?: string } } }>; };
+    const missing = findMissingSelectors(graph, registry);
+    missing.forEach((selector) => {
+      issues.push({
+        severity: 'error',
+        type: 'selector',
+        message: `Selector '${selector.selectorId}' referenced in ${path.basename(file)} is not in the registry.`,
+        file,
+        suggestion: suggestAlternative(registry.selectors),
+      });
+    });
   }
 
-  const report = createReport(issues, yamlFiles.length + (featuresDir ? (await findFiles(featuresDir)).length : 0));
-
-  await ensureDir(path.dirname(reportPath));
-  await writeTextFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
-
+  const report = buildReport(graphFiles.length, issues);
+  await persistReport(reportPath, report);
   return report;
 }
 
-async function loadRegistry(registryPath: string): Promise<SelectorRegistry> {
-  const registry = await readSelectorRegistry(registryPath);
+async function loadRegistry(registryPath?: string): Promise<SelectorRegistry> {
+  const registry = await readSelectorRegistry(registryPath ?? DEFAULT_REGISTRY_PATH);
   if (!registry) {
-    throw new Error(`Selector registry not found at ${registryPath}`);
+    throw new Error(`Selector registry not found at ${resolveRegistryPath(registryPath)}`);
   }
   return registry;
 }
 
-async function findFiles(root: string, extension?: string): Promise<string[]> {
+async function findFiles(root: string, extension: string): Promise<string[]> {
+  const entries = await fs.readdir(root, { withFileTypes: true }).catch(() => []);
   const files: string[] = [];
-  let entries;
-  try {
-    entries = await fs.readdir(root, { withFileTypes: true });
-  } catch (error: unknown) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
-    }
-    throw error;
-  }
-
   for (const entry of entries) {
     const fullPath = path.join(root, entry.name);
     if (entry.isDirectory()) {
       files.push(...(await findFiles(fullPath, extension)));
-    } else if (!extension || entry.name.endsWith(extension)) {
+    } else if (entry.name.endsWith(extension)) {
       files.push(fullPath);
     }
   }
-
   return files;
 }
 
-function indexYamlSelectors(content: string): Map<string, number> {
-  const lines = content.split(/\r?\n/);
-  const map = new Map<string, number>();
+function findMissingSelectors(graph: { nodes?: Array<{ selectors?: Array<{ id?: string }>; instructions?: { deterministic?: { selector?: string } } }> } }, registry: SelectorRegistry): SelectorIssue[] {
+  const missing: SelectorIssue[] = [];
+  const nodes = graph.nodes ?? [];
 
-  lines.forEach((line, index) => {
-    const match = line.match(/^\s*([a-z0-9-]+)\s*:/i);
-    if (match) {
-      map.set(match[1], index + 1);
+  for (const node of nodes) {
+    const ids = extractSelectorIds(node);
+    for (const selectorId of ids) {
+      const normalized = normalizeId(selectorId);
+      if (!normalized) {
+        continue;
+      }
+      if (!registry.selectors[normalized]) {
+        missing.push({ selectorId, graph: node?.instructions?.deterministic?.selector ?? '' });
+      }
     }
-  });
+  }
 
-  return map;
+  return missing;
 }
 
-function suggestAlternative(registry: Record<string, SelectorEntry>): string | undefined {
-  const accessible = Object.values(registry)
+function extractSelectorIds(node: { selectors?: Array<{ id?: string }>; instructions?: { deterministic?: { selector?: string } } }): string[] {
+  const ids = new Set<string>();
+  for (const entry of node.selectors ?? []) {
+    if (entry.id) {
+      ids.add(entry.id);
+    }
+  }
+  const deterministic = node.instructions?.deterministic?.selector;
+  if (deterministic) {
+    ids.add(deterministic);
+  }
+  return Array.from(ids);
+}
+
+function normalizeId(selector: string): string {
+  return selector.trim().toLowerCase();
+}
+
+function suggestAlternative(registry: Record<string, import('./types/selector-registry').SelectorEntry>): string | undefined {
+  const matches = Object.values(registry)
     .filter((entry) => entry.accessible)
     .sort((a, b) => a.priority - b.priority);
-  return accessible[0]?.id;
+  return matches[0]?.id;
 }
 
-function createReport(issues: ValidationIssue[], totalFiles: number): ValidationReport {
+function buildReport(totalGraphs: number, issues: ValidationIssue[]): ValidationReport {
   const failedFiles = new Set(issues.map((issue) => issue.file));
-
   return {
     timestamp: new Date().toISOString(),
-    totalFiles,
-    passed: totalFiles - failedFiles.size,
+    totalFiles: totalGraphs,
+    passed: Math.max(totalGraphs - failedFiles.size, 0),
     failed: failedFiles.size,
     issues,
     summary: {
@@ -130,4 +132,9 @@ function createReport(issues: ValidationIssue[], totalFiles: number): Validation
       secretFindings: 0,
     },
   };
+}
+
+async function persistReport(reportPath: string, report: ValidationReport): Promise<void> {
+  await ensureDir(path.dirname(reportPath));
+  await writeTextFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
 }
