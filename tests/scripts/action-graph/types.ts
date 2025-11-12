@@ -60,6 +60,9 @@ export interface NodeMetadata {
   timeout?: number;
   critical?: boolean;
   testData?: Record<string, unknown>;
+  selectorHintText?: string;
+  selectorHintType?: string;
+  selectorHintRole?: string;
 }
 
 export interface ActionNode {

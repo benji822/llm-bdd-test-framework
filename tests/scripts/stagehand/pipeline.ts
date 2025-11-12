@@ -4,7 +4,7 @@ import path from 'node:path';
 import { ActionGraphBuilder, generateGraphId } from '../action-graph/index.js';
 import { GraphPersistence } from '../action-graph/persistence.js';
 import { compileActionGraph } from '../action-graph/compiler.js';
-import type { DeterministicAction, GherkinKeyword, NodeType } from '../action-graph/types.js';
+import type { DeterministicAction, GherkinKeyword, NodeMetadata, NodeType } from '../action-graph/types.js';
 import { buildPlaceholderDefaults } from './recorder.js';
 import type { ScenarioRecordingResult } from './recorder.js';
 import { createAuthoringStagehandWrapper } from './bootstrap.js';
@@ -148,6 +148,11 @@ async function recordScenarioGraph(params: RecordScenarioParams): Promise<Scenar
         builder.addDeterministicInstruction(nodeId, plan.selector, plan.action, plan.value);
       }
 
+      const hintMetadata = deriveSelectorHintMetadata(actResult.actions ?? []);
+      if (Object.keys(hintMetadata).length > 0) {
+        builder.addMetadata(nodeId, hintMetadata);
+      }
+
       const execution = {
         state: 'success',
         duration: actResult.metadata.duration,
@@ -233,6 +238,56 @@ function mapStagehandActionToPlan(
   }
 
   return plan;
+}
+
+function deriveSelectorHintMetadata(actions: StagehandActionDescriptor[]): Partial<NodeMetadata> {
+  if (!actions.length) {
+    return {};
+  }
+
+  const primary = actions.find((action) => Boolean(action.selector)) ?? actions[0];
+  if (!primary) {
+    return {};
+  }
+
+  const metadata: Partial<NodeMetadata> = {};
+  const textHint = extractTextHint(primary.description);
+  if (textHint) {
+    metadata.selectorHintText = textHint;
+  }
+  const typeHint = extractAttributeFromSelector(primary.selector, 'type');
+  if (typeHint) {
+    metadata.selectorHintType = typeHint.toLowerCase();
+  }
+  const roleHint = extractAttributeFromSelector(primary.selector, 'role');
+  if (roleHint) {
+    metadata.selectorHintRole = roleHint.toLowerCase();
+  }
+
+  return metadata;
+}
+
+function extractTextHint(description?: string): string | undefined {
+  if (!description) {
+    return undefined;
+  }
+  const quoted = description.match(/["'“”‘](.+?)["'”’]/);
+  if (quoted) {
+    return quoted[1].trim();
+  }
+  const cleaned = description
+    .replace(/\b(click|press|tap|select|enter|choose|submit|button|link|element)\b/gi, ' ')
+    .replace(/[:.]/g, ' ')
+    .trim();
+  return cleaned || undefined;
+}
+
+function extractAttributeFromSelector(selector: string | undefined, attribute: string): string | undefined {
+  if (!selector) {
+    return undefined;
+  }
+  const match = selector.match(new RegExp(`${attribute}\\s*=\\s*['"]?([^'"]+)['"]?`, 'i'));
+  return match ? match[1] : undefined;
 }
 
 function pickPrimaryAction(actions: StagehandActionDescriptor[]): StagehandActionDescriptor | undefined {

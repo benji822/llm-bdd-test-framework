@@ -3,9 +3,9 @@ Feature: Customer login
 Users must authenticate with email and password to reach the dashboard.
 
 Happy path:
-- User opens the login page.
+- User nagivate to login page.
 - User enters a valid email and password combination.
-- Submit button logs user in.
+- click on login button to log user incorrect.
 
 Invalid password:
 - User provides an existing email with incorrect password.

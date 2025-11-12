@@ -1,13 +1,35 @@
 {
-  "timestamp": "2025-10-18T11:12:05.771Z",
-  "totalFiles": 2,
-  "passed": 2,
-  "failed": 0,
-  "issues": [],
+  "timestamp": "2025-11-12T07:28:45.000Z",
+  "totalFiles": 1,
+  "passed": 0,
+  "failed": 1,
+  "issues": [
+    {
+      "severity": "error",
+      "type": "selector",
+      "message": "Selector 'xpath=/' referenced in 2add92dde2ee5d37a17c5c487aa4f9744cb9b04f3ab95aaf6682521ac9e3de0a__happy-path__v1762932339815.json is not in the registry.",
+      "file": "/home/benji822/Documents/personal/llm-bdd-test-framework/tests/artifacts/graph/2add92dde2ee5d37a17c5c487aa4f9744cb9b04f3ab95aaf6682521ac9e3de0a__happy-path__v1762932339815.json",
+      "suggestion": "dashboard-heading"
+    },
+    {
+      "severity": "error",
+      "type": "selector",
+      "message": "Selector 'xpath=/html[1]' referenced in 2add92dde2ee5d37a17c5c487aa4f9744cb9b04f3ab95aaf6682521ac9e3de0a__happy-path__v1762932339815.json is not in the registry.",
+      "file": "/home/benji822/Documents/personal/llm-bdd-test-framework/tests/artifacts/graph/2add92dde2ee5d37a17c5c487aa4f9744cb9b04f3ab95aaf6682521ac9e3de0a__happy-path__v1762932339815.json",
+      "suggestion": "dashboard-heading"
+    },
+    {
+      "severity": "error",
+      "type": "selector",
+      "message": "Selector 'xpath=/' referenced in 2add92dde2ee5d37a17c5c487aa4f9744cb9b04f3ab95aaf6682521ac9e3de0a__happy-path__v1762932339815.json is not in the registry.",
+      "file": "/home/benji822/Documents/personal/llm-bdd-test-framework/tests/artifacts/graph/2add92dde2ee5d37a17c5c487aa4f9744cb9b04f3ab95aaf6682521ac9e3de0a__happy-path__v1762932339815.json",
+      "suggestion": "dashboard-heading"
+    }
+  ],
   "summary": {
     "schemaErrors": 0,
     "lintErrors": 0,
-    "selectorMismatches": 0,
+    "selectorMismatches": 3,
     "coverageGaps": 0,
     "secretFindings": 0
   }

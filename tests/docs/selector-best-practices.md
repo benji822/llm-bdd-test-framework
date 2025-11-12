@@ -56,3 +56,4 @@ Reliable selectors keep the generated BDD tests stable and accessible. The selec
 - **Selector missing in registry** – confirm the page route is included in nightly scan routes; add if necessary.
 - **Flaky selectors** – prefer roles/labels over dynamic CSS classes.
 - **Registry empty** – ensure the app boots with the configured `E2E_BASE_URL`; nightly workflow requires the secret to point at a deployed environment.
+- **Text-only buttons** – selectors without ARIA/testid metadata rely on `selectorResolver`’s text/type strategy (default order `role`,`label`,`text`,`type`,`name`,`placeholder`,`css`,`testid`). Tune `SELECTOR_STRATEGY` if you want to prioritize text or type heuristics (e.g., `SELECTOR_STRATEGY=text,type` for plain `LOG IN` buttons).

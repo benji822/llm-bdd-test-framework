@@ -225,6 +225,8 @@ During execution the step implementation reads `process.env.E2E_USER_EMAIL`, ens
    `<input data-testid="email-input" />` → `email-input`
 4. **Fallback CSS** (`priority: 4`) only when unavoidable.
 
+The runtime `selectorResolver` also understands text/type-based heuristics. When a recorded step lacks a registry ID, it tries these strategies in the default order `role,label,text,type,name,placeholder,css,testid`. The `SELECTOR_STRATEGY` environment variable can override that order (e.g., `SELECTOR_STRATEGY=text` forces text-first resolution), and recorded hints such as the button text (`LOG IN`) or input type (`submit`) help it reach the right element even when no ARIA attributes are available.
+
 Selector registry entries (`tests/artifacts/selectors/registry.json`) follow:
 
 ```json
