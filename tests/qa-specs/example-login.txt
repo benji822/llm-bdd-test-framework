@@ -3,11 +3,15 @@ Feature: Customer login
 Users must authenticate with email and password to reach the dashboard.
 
 Happy path:
-- User nagivate to login page.
-- User enters a valid email and password combination.
-- click on login button to log user incorrect.
+- I am on the login page
+- I enter email as <E2E_USER_EMAIL>
+- I enter password as <E2E_USER_PASSWORD>
+- I click the login button
+- I should see text "Welcome back"
 
 Invalid password:
-- User provides an existing email with incorrect password.
-- Show an inline error messaging the invalid credentials.
-- Keep the submit button enabled for retry.
+- I am on the login page
+- I enter email as <E2E_USER_EMAIL>
+- I enter password as <E2E_INVALID_PASSWORD>
+- I click the login button
+- I should see text "Invalid credentials"

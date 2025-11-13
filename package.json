@@ -19,6 +19,7 @@
     "bdd:compile": "tsx tests/scripts/cli-bdd.ts compile",
     "bdd:run": "tsx tests/scripts/cli-bdd.ts run",
     "bdd:verify": "tsx tests/scripts/cli-bdd.ts verify",
+    "llm-bdd": "tsx tests/scripts/llm/cli.ts",
     "ci:policy": "tsx tests/scripts/ci-policy.ts",
     "pretest": "tsx tests/scripts/ci-policy.ts",
     "test": "playwright test",
