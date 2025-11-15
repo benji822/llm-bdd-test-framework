@@ -22,6 +22,7 @@ function resolvePageUrl(pageKey: keyof typeof PAGES): string {
 test.describe("Customer login", () => {
   test("Happy path", async ({ page }) => {
     await page.goto(resolvePageUrl("login"));
+    await page.waitForLoadState('networkidle');
     const { locator: locator0 } = await selectorResolver(page, undefined, { textHint: "email" });
     await locator0.fill(process.env.E2E_USER_EMAIL ?? "<E2E_USER_EMAIL>");
     const { locator: locator1 } = await selectorResolver(page, undefined, { textHint: "password" });
@@ -33,6 +34,7 @@ test.describe("Customer login", () => {
   });
   test("Invalid password", async ({ page }) => {
     await page.goto(resolvePageUrl("login"));
+    await page.waitForLoadState('networkidle');
     const { locator: locator0 } = await selectorResolver(page, undefined, { textHint: "email" });
     await locator0.fill(process.env.E2E_USER_EMAIL ?? "<E2E_USER_EMAIL>");
     const { locator: locator1 } = await selectorResolver(page, undefined, { textHint: "password" });

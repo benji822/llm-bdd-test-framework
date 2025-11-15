@@ -464,6 +464,7 @@ function renderScenarioBlock(scenario: CompiledScenario): string[] {
   const lines: string[] = [];
   lines.push(`  test(${JSON.stringify(scenario.name)}, async ({ page }) => {`);
   lines.push(`    await page.goto(resolvePageUrl(${JSON.stringify(scenario.pageKey)}));`);
+  lines.push(`    await page.waitForLoadState('networkidle');`);
 
   scenario.steps.forEach((step, index) => {
     const stepLines = renderStepLines(step, index);
