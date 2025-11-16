@@ -73,6 +73,11 @@ async function handleCompile(argv: string[]): Promise<void> {
         options.vocabularyPath = peek;
         index += 1;
         break;
+      case '--connectors':
+        ensureArgValue(token, peek);
+        options.connectorsPath = peek;
+        index += 1;
+        break;
       default:
         if (token.startsWith('--')) {
           throw new Error(`Unknown flag for compile: ${token}`);
@@ -180,6 +185,11 @@ async function handleCi(argv: string[]): Promise<void> {
           compileOptions.vocabularyPath = peek;
           index += 1;
           break;
+        case '--connectors':
+          ensureArgValue(token, peek);
+          compileOptions.connectorsPath = peek;
+          index += 1;
+          break;
         case '--base-url':
           ensureArgValue(token, peek);
           compileOptions.baseUrl = peek;
@@ -259,7 +269,7 @@ function printUsage(): void {
 
 function printCompileUsage(): void {
   console.log(
-    'Usage: llm-bdd compile <spec>... [--scenario <name>] [--pages <path>] [--out-dir <dir>] [--base-url <url>] [--vocabulary <path>]'
+    'Usage: llm-bdd compile <spec>... [--scenario <name>] [--pages <path>] [--out-dir <dir>] [--base-url <url>] [--vocabulary <path>] [--connectors <path>]'
   );
 }
 

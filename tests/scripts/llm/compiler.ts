@@ -5,6 +5,7 @@ import { logEvent } from '../utils/logging.js';
 import { parsePlainSpec, type PlainSpecDefinition, type PlainSpecScenario, type SetupAction } from '../stagehand/spec.js';
 import { parseYaml } from '../utils/yaml-parser.js';
 import type { StepDefinition, StepVocabulary } from '../types/step-vocabulary.js';
+import { executeSetup, injectAliasesIntoSteps, type SetupState } from './connectors-executor.js';
 
 const DEFAULT_OUTPUT_DIR = 'tests/e2e-gen';
 const DEFAULT_PAGES_PATH = 'pages.yaml';
@@ -18,6 +19,7 @@ export interface LlmbddCompileOptions {
   pagesPath?: string;
   baseUrl?: string;
   vocabularyPath?: string;
+  connectorsPath?: string;
 }
 
 interface VocabularyMatcher {
@@ -63,6 +65,7 @@ export async function compileQaSpecs(options: LlmbddCompileOptions): Promise<voi
   const vocabulary = await loadVocabulary(options.vocabularyPath ?? DEFAULT_VOCABULARY_PATH);
   const matchers = vocabulary ? buildVocabularyMatchers(vocabulary.definitions) : [];
   const baseUrl = options.baseUrl ?? process.env.E2E_BASE_URL ?? FALLBACK_BASE_URL;
+  const connectorsPath = path.resolve(options.connectorsPath ?? 'connectors.yaml');
 
   await ensureDir(outputDir);
 
@@ -78,6 +81,8 @@ export async function compileQaSpecs(options: LlmbddCompileOptions): Promise<voi
       );
     }
 
+    const setupState = await executeSetup(spec.setup, connectorsPath);
+
     const rendered = renderSpecFile({
       spec,
       specPath,
@@ -86,6 +91,7 @@ export async function compileQaSpecs(options: LlmbddCompileOptions): Promise<voi
       baseUrl,
       matchers,
       setup: spec.setup,
+      setupState,
     });
 
     const fileName = deriveOutputFileName(specPath, spec);
@@ -187,12 +193,14 @@ interface RenderSpecOptions {
   baseUrl: string;
   matchers: VocabularyMatcher[];
   setup?: SetupAction[];
+  setupState?: SetupState;
 }
 
 function renderSpecFile(options: RenderSpecOptions): string {
-  const compiled = options.scenarios.map((scenario) =>
-    compileScenario(scenario, options.pages, options.matchers, options.specPath)
-  );
+  const compiled = options.scenarios.map((scenario) => {
+    const steps = options.setupState ? injectAliasesIntoSteps(scenario.steps, options.setupState) : scenario.steps;
+    return compileScenario({ ...scenario, steps }, options.pages, options.matchers, options.specPath);
+  });
   const requiresExpect = compiled.some((scenario) =>
     scenario.steps.some((step) => step.action === 'assert')
   );

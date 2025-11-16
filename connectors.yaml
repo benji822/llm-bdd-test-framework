@@ -1,0 +1,51 @@
+version: '1.0'
+
+variables:
+  - name: api_base_url
+    value: '${API_BASE_URL}'
+    env: API_BASE_URL
+  - name: db_connection
+    value: '${DATABASE_URL}'
+    env: DATABASE_URL
+
+endpoints:
+  player_api:
+    type: http
+    url: '${API_BASE_URL}/api'
+  reward_api:
+    type: http
+    url: '${API_BASE_URL}/api'
+  game_db:
+    type: sql
+    database: game_test
+    connectionString: '${DATABASE_URL}'
+
+actions:
+  create_player:
+    name: create_player
+    resource: player
+    operation: create
+    endpoint: player_api
+    payload:
+      status: active
+    idempotencyKey: player_uuid
+  create_reward:
+    name: create_reward
+    resource: reward
+    operation: create
+    endpoint: reward_api
+    payload:
+      type: generic
+      available: true
+  assign_reward:
+    name: assign_reward
+    resource: reward
+    operation: assign
+    endpoint: reward_api
+  claim_reward:
+    name: claim_reward
+    resource: reward
+    operation: update
+    endpoint: reward_api
+    payload:
+      status: claimed
