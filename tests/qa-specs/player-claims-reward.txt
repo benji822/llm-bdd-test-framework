@@ -1,0 +1,21 @@
+Feature: Player claims reward
+
+A player must complete a task to unlock and claim a reward.
+
+Setup:
+- Create player with email <PLAYER_EMAIL>
+- Create reward with name "Badge Unlock"
+- Assign reward to player
+
+Happy path:
+- I am on the dashboard
+- I click "Complete Task" button
+- I should see "Task Completed" message
+- I click "Claim Reward" button
+- I should see "Badge Unlock" in my inventory
+
+Task already completed:
+- I am on the dashboard
+- I should see "Task Completed" message
+- I click "Claim Reward" button
+- I should see "Already claimed" message

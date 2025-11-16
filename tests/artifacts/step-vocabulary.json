@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "lastUpdated": "2025-10-18T09:21:26.401405+00:00",
+  "version": "1.0.1",
+  "lastUpdated": "2025-11-16T13:50:35.208458+08:00",
   "definitions": [
     {
       "pattern": "I am on the {page} page",
@@ -55,6 +55,58 @@
       "version": "1.0.0"
     },
     {
+      "pattern": "I hover over the {element}",
+      "domain": "interaction",
+      "file": "tests/steps/interaction.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I hover over the menu",
+        "I hover over the settings icon"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I type {value} into {field}",
+      "domain": "interaction",
+      "file": "tests/steps/interaction.steps.ts",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "string"
+        },
+        {
+          "name": "field",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I type \"search term\" into search",
+        "I type \"Hello\" into message box"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I scroll to the {element}",
+      "domain": "interaction",
+      "file": "tests/steps/interaction.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I scroll to the footer",
+        "I scroll to the submit button"
+      ],
+      "version": "1.0.0"
+    },
+    {
       "pattern": "I should see text {text}",
       "domain": "assertion",
       "file": "tests/steps/assertion.steps.ts",
@@ -67,6 +119,102 @@
       "examples": [
         "I should see text \"Welcome back\"",
         "I should see text \"Invalid credentials\""
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I should see the {element}",
+      "domain": "assertion",
+      "file": "tests/steps/assertion.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I should see the login form",
+        "I should see the dashboard header"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I should not see the {element}",
+      "domain": "assertion",
+      "file": "tests/steps/assertion.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I should not see the error message",
+        "I should not see the loading spinner"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I wait for the {element} to be visible",
+      "domain": "assertion",
+      "file": "tests/steps/assertion.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I wait for the modal to be visible",
+        "I wait for the notification to be visible"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "I wait for the {element} to disappear",
+      "domain": "assertion",
+      "file": "tests/steps/assertion.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "I wait for the loading spinner to disappear",
+        "I wait for the toast to disappear"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "The {element} should be disabled",
+      "domain": "assertion",
+      "file": "tests/steps/assertion.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "The submit button should be disabled",
+        "The email field should be disabled"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "pattern": "The {element} should be enabled",
+      "domain": "assertion",
+      "file": "tests/steps/assertion.steps.ts",
+      "parameters": [
+        {
+          "name": "element",
+          "type": "string"
+        }
+      ],
+      "examples": [
+        "The submit button should be enabled",
+        "The email field should be enabled"
       ],
       "version": "1.0.0"
     }

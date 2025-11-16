@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-11-16T05:42:52.706Z",
+  "baseUrl": "http://localhost:3000",
+  "specDir": "/home/benji822/Documents/personal/llm-bdd-test-framework/tests/e2e-gen",
+  "totalScenarios": 2,
+  "passedScenarios": 0,
+  "failedScenarios": 2,
+  "scenarios": [
+    {
+      "scenarioName": "Happy path",
+      "pageKey": "login",
+      "pageUrl": "http://localhost:3000/login",
+      "steps": [],
+      "passed": false,
+      "error": "Failed to navigate to http://localhost:3000/login: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/login\", waiting until \"networkidle\"\u001b[22m\n"
+    },
+    {
+      "scenarioName": "Invalid password",
+      "pageKey": "login",
+      "pageUrl": "http://localhost:3000/login",
+      "steps": [],
+      "passed": false,
+      "error": "Failed to navigate to http://localhost:3000/login: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/login\", waiting until \"networkidle\"\u001b[22m\n"
+    }
+  ]
+}

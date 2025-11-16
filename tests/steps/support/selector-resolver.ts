@@ -29,6 +29,8 @@ interface SelectorResolverOptions {
   textHint?: string;
   typeHint?: string;
   roleHint?: string;
+  scope?: Locator;
+  ambiguityPolicy?: 'error' | 'first' | 'warn';
 }
 
 interface SelectorResolverTelemetry {
@@ -37,6 +39,8 @@ interface SelectorResolverTelemetry {
   entryId?: string;
   tokens: string[];
   source: StrategySource;
+  matchCount?: number;
+  candidates?: Array<{ selector: string; entryId?: string; reason: string }>;
 }
 
 interface SelectorResolution {
@@ -92,10 +96,17 @@ function buildTokens(idOrHint?: string): string[] {
 function parseStrategyOrder(
   options?: SelectorResolverOptions
 ): StrategyName[] {
+  let result: StrategyName[] = [];
+
+  // Option 1: explicit strategyOrder in options
   if (options?.strategyOrder && options.strategyOrder.length > 0) {
-    return options.strategyOrder.filter((strategy) => VALID_STRATEGIES.has(strategy));
+    result = options.strategyOrder.filter((strategy) => VALID_STRATEGIES.has(strategy));
+    // Always append missing defaults in their canonical order
+    const missing = DEFAULT_STRATEGY_ORDER.filter((s) => !result.includes(s));
+    return [...result, ...missing];
   }
 
+  // Option 2: SELECTOR_STRATEGY environment variable
   const envOverride = process.env.SELECTOR_STRATEGY;
   if (envOverride) {
     const candidates = envOverride
@@ -104,10 +115,13 @@ function parseStrategyOrder(
       .filter(Boolean)
       .filter((value): value is StrategyName => VALID_STRATEGIES.has(value as StrategyName));
     if (candidates.length > 0) {
-      return candidates;
+      // Always append missing defaults in their canonical order
+      const missing = DEFAULT_STRATEGY_ORDER.filter((s) => !candidates.includes(s));
+      return [...candidates, ...missing];
     }
   }
 
+  // Default fallback
   return DEFAULT_STRATEGY_ORDER;
 }
 
@@ -132,7 +146,9 @@ function createTelemetry(
   selector: string,
   tokens: string[],
   source: StrategySource,
-  entryId?: string
+  entryId?: string,
+  matchCount?: number,
+  candidates?: Array<{ selector: string; entryId?: string; reason: string }>
 ): SelectorResolverTelemetry {
   return {
     strategy,
@@ -140,14 +156,36 @@ function createTelemetry(
     entryId,
     tokens,
     source,
+    matchCount,
+    candidates,
   };
 }
 
 function finalizeResolution(
   locator: Locator,
   telemetry: SelectorResolverTelemetry,
-  logger: (event: SelectorResolverTelemetry) => void
-): SelectorResolution {
+  logger: (event: SelectorResolverTelemetry) => void,
+  ambiguityPolicy?: 'error' | 'first' | 'warn'
+): SelectorResolution | undefined {
+  if (ambiguityPolicy === 'error' && telemetry.matchCount && telemetry.matchCount > 1) {
+    const candidatesList =
+      telemetry.candidates
+        ?.map((c) => `  - ${c.selector}${c.entryId ? ` (${c.entryId})` : ''} [${c.reason}]`)
+        .join('\n') || '';
+    const message =
+      `Ambiguous selector resolution for "${telemetry.selector}": ` +
+      `${telemetry.matchCount} elements matched.\n` +
+      `Candidates:\n${candidatesList}\n` +
+      `Suggestion: Add explicit aria-label, data-testid, or registry ID to disambiguate.`;
+    throw new Error(message);
+  }
+
+  if (ambiguityPolicy === 'warn' && telemetry.matchCount && telemetry.matchCount > 1) {
+    console.warn(
+      `[selector-resolver] Ambiguous match: "${telemetry.selector}" resolved to ${telemetry.matchCount} elements. Using first.`
+    );
+  }
+
   logger(telemetry);
   return { locator, telemetry };
 }
@@ -176,7 +214,10 @@ async function resolveFromRegistry(
   }
 
   for (const entry of entries) {
-    const locator = page.locator(entry.selector);
+    const scope = options?.scope ?? page;
+    const locator = scope.locator(entry.selector);
+    const count = await locator.count();
+
     const resolution = await tryFinalizeResolution(
       locator,
       strategy,
@@ -185,7 +226,8 @@ async function resolveFromRegistry(
       'registry',
       logger,
       options,
-      entry.id
+      entry.id,
+      count > 0 ? count : undefined
     );
 
     if (resolution) {
@@ -209,16 +251,21 @@ async function resolveByAttribute(
 
   for (const token of tokens) {
     const selector = `[${attr}*="${escapeAttributeValue(token)}"]`;
-    const locator = page.locator(selector).first();
-    if (await locator.count()) {
+    const scope = options?.scope ?? page;
+    const locator = scope.locator(selector);
+    const count = await locator.count();
+
+    if (count > 0) {
       const resolution = await tryFinalizeResolution(
-        locator,
+        locator.first(),
         attr,
         selector,
         tokens,
         'attribute',
         logger,
-        options
+        options,
+        undefined,
+        count > 1 ? count : undefined
       );
       if (resolution) {
         return resolution;
@@ -252,16 +299,21 @@ async function resolveByText(
       continue;
     }
     const pattern = new RegExp(escapeForRegex(normalized), 'i');
-    const locator = page.getByRole(role, { name: pattern }).first();
-    if (await locator.count()) {
+    const scope = options?.scope ?? page;
+    const locator = scope.getByRole(role, { name: pattern });
+    const count = await locator.count();
+
+    if (count > 0) {
       const resolution = await tryFinalizeResolution(
-        locator,
+        locator.first(),
         'text',
         `getByRole('${role}', { name: ${pattern} })`,
         tokens,
         'heuristic',
         logger,
-        options
+        options,
+        undefined,
+        count > 1 ? count : undefined
       );
       if (resolution) {
         return resolution;
@@ -294,16 +346,21 @@ async function resolveByType(
   ];
 
   for (const selector of selectors) {
-    const locator = page.locator(selector).first();
-    if (await locator.count()) {
+    const scope = options?.scope ?? page;
+    const locator = scope.locator(selector);
+    const count = await locator.count();
+
+    if (count > 0) {
       const resolution = await tryFinalizeResolution(
-        locator,
+        locator.first(),
         'type',
         selector,
         tokens,
         'heuristic',
         logger,
-        options
+        options,
+        undefined,
+        count > 1 ? count : undefined
       );
       if (resolution) {
         return resolution;
@@ -347,14 +404,22 @@ async function tryFinalizeResolution(
   source: StrategySource,
   logger: (event: SelectorResolverTelemetry) => void,
   options?: SelectorResolverOptions,
-  entryId?: string
+  entryId?: string,
+  matchCount?: number
 ): Promise<SelectorResolution | undefined> {
   if (!(await matchesExpectedTag(locator, options?.expectedTagNames))) {
     return undefined;
   }
 
-  const telemetry = createTelemetry(strategy, selector, tokens, source, entryId);
-  return finalizeResolution(locator, telemetry, logger);
+  const telemetry = createTelemetry(
+    strategy,
+    selector,
+    tokens,
+    source,
+    entryId,
+    matchCount
+  );
+  return finalizeResolution(locator, telemetry, logger, options?.ambiguityPolicy);
 }
 
 export async function selectorResolver(
@@ -365,9 +430,14 @@ export async function selectorResolver(
   const logger = options?.logger ?? defaultLogger;
   const tokens = buildTokens(idOrHint);
   const registry = await loadSelectorRegistry(options?.registryPath);
+
+  // ID shortcut with scope support
   if (idOrHint && registry?.selectors[idOrHint]) {
     const entry = registry.selectors[idOrHint];
-    const locator = page.locator(entry.selector);
+    const scope = options?.scope ?? page;
+    const locator = scope.locator(entry.selector);
+    const count = await locator.count();
+
     const resolution = await tryFinalizeResolution(
       locator,
       'id',
@@ -376,13 +446,15 @@ export async function selectorResolver(
       'registry',
       logger,
       options,
-      entry.id
+      entry.id,
+      count > 1 ? count : undefined
     );
     if (resolution) {
       return resolution;
     }
   }
 
+  // Strategy iteration with documented default order enforcement
   const strategies = parseStrategyOrder(options);
   for (const strategy of strategies) {
     let resolution: SelectorResolution | undefined;
@@ -401,10 +473,13 @@ export async function selectorResolver(
     }
   }
 
+  // Enhanced error message with strategy trace
+  const strategyTrace = strategies.join(' → ');
+  const hint = idOrHint ? `"${idOrHint}"` : 'selector';
   throw new Error(
-    `selectorResolver could not resolve "${idOrHint ?? 'selector'}" using strategies ${strategies.join(
-      ','
-    )}`
+    `selectorResolver could not resolve ${hint}.\n` +
+    `Strategy order tried: ${strategyTrace}\n` +
+    `Suggestion: Register this selector in the registry, add aria-label/data-testid, or provide an explicit hint.`
   );
 }
 

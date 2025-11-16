@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { ensureDir, readTextFile, writeTextFile } from '../utils/file-operations.js';
 import { logEvent } from '../utils/logging.js';
-import { parsePlainSpec, type PlainSpecDefinition, type PlainSpecScenario } from '../stagehand/spec.js';
+import { parsePlainSpec, type PlainSpecDefinition, type PlainSpecScenario, type SetupAction } from '../stagehand/spec.js';
 import { parseYaml } from '../utils/yaml-parser.js';
 import type { StepDefinition, StepVocabulary } from '../types/step-vocabulary.js';
 
@@ -31,7 +31,7 @@ interface StepMatch {
   params: Record<string, string>;
 }
 
-type StepAction = 'click' | 'fill' | 'assert';
+type StepAction = 'click' | 'fill' | 'assert' | 'hover' | 'scroll' | 'type' | 'waitVisible' | 'waitHidden' | 'assertDisabled' | 'assertEnabled';
 
 interface StepHint {
   textHint?: string;
@@ -85,6 +85,7 @@ export async function compileQaSpecs(options: LlmbddCompileOptions): Promise<voi
       pages,
       baseUrl,
       matchers,
+      setup: spec.setup,
     });
 
     const fileName = deriveOutputFileName(specPath, spec);
@@ -185,6 +186,7 @@ interface RenderSpecOptions {
   pages: Record<string, string>;
   baseUrl: string;
   matchers: VocabularyMatcher[];
+  setup?: SetupAction[];
 }
 
 function renderSpecFile(options: RenderSpecOptions): string {
@@ -199,11 +201,37 @@ function renderSpecFile(options: RenderSpecOptions): string {
   imports.push("import { selectorResolver } from '../steps/support/selector-resolver.js';");
 
   const featureName = options.spec.featureName ?? path.basename(options.specPath);
+  
+  // Generate setup helpers if needed
+  const setupLines: string[] = [];
+  if (options.setup && options.setup.length > 0) {
+    setupLines.push('');
+    setupLines.push('// Setup helpers');
+    setupLines.push('async function executeSetup(): Promise<Record<string, unknown>> {');
+    setupLines.push('  const state: Record<string, unknown> = {};');
+    for (const action of options.setup) {
+      setupLines.push(`  // ${action.type} ${action.resource}`);
+      setupLines.push(`  // state.${action.alias || action.resource} = await ${action.type}${action.resource}(...)`);
+    }
+    setupLines.push('  return state;');
+    setupLines.push('}');
+  }
+
   const describeLines = [
     `test.describe(${JSON.stringify(featureName)}, () => {`,
-    ...compiled.flatMap((scenario) => renderScenarioBlock(scenario)),
-    '});',
   ];
+
+  // Add setup in beforeAll if there's setup
+  if (options.setup && options.setup.length > 0) {
+    describeLines.push('  let setupState: Record<string, unknown>;');
+    describeLines.push('  test.beforeAll(async () => {');
+    describeLines.push('    setupState = await executeSetup();');
+    describeLines.push('  });');
+    describeLines.push('');
+  }
+
+  describeLines.push(...compiled.flatMap((scenario) => renderScenarioBlock(scenario)));
+  describeLines.push('});');
 
   const pagesLiteral = `const PAGES = ${JSON.stringify(options.pages, null, 2)} as const;`;
   const baseUrlLiteral = `const BASE_URL = process.env.E2E_BASE_URL ?? ${JSON.stringify(
@@ -229,6 +257,7 @@ function renderSpecFile(options: RenderSpecOptions): string {
     baseUrlLiteral,
     '',
     helper,
+    ...setupLines,
     '',
     ...describeLines,
   ].join('\n');
@@ -264,10 +293,9 @@ function compileScenario(
     }
 
     const action = determineAction(match, stepText);
-    if (action === 'click' || action === 'fill' || action === 'assert') {
-      const step = buildCompiledStep(stepText, action, match);
-      compiledSteps.push(step);
-    }
+    // Include all action types in compiled steps
+    const step = buildCompiledStep(stepText, action, match);
+    compiledSteps.push(step);
   }
 
   if (!pageKey) {
@@ -307,13 +335,19 @@ function matchStepAgainstVocabulary(text: string, matchers: VocabularyMatcher[])
 
 function determineAction(match: StepMatch | undefined, text: string): StepAction {
   if (match) {
+    const pattern = match.definition.pattern.toLowerCase();
     if (match.definition.domain === 'assertion') {
+      if (pattern.includes('disabled')) return 'assertDisabled';
+      if (pattern.includes('enabled')) return 'assertEnabled';
+      if (pattern.includes('disappear')) return 'waitHidden';
+      if (pattern.includes('visible')) return 'waitVisible';
       return 'assert';
     }
     if (match.definition.domain === 'interaction') {
-      if (match.definition.pattern.toLowerCase().includes('enter')) {
-        return 'fill';
-      }
+      if (pattern.includes('hover')) return 'hover';
+      if (pattern.includes('scroll')) return 'scroll';
+      if (pattern.includes('type')) return 'type';
+      if (pattern.includes('enter')) return 'fill';
       return 'click';
     }
   }
@@ -323,8 +357,23 @@ function determineAction(match: StepMatch | undefined, text: string): StepAction
 
 function inferActionFromText(text: string): StepAction {
   const normalized = text.toLowerCase();
+  if (/(disabled|enabled)/.test(normalized)) {
+    return normalized.includes('disabled') ? 'assertDisabled' : 'assertEnabled';
+  }
+  if (/(disappear|hidden|gone)/.test(normalized)) {
+    return 'waitHidden';
+  }
+  if (/(visible|appear|shown)/.test(normalized)) {
+    return 'waitVisible';
+  }
   if (/(should|expect|see|verify|confirm|assert|display|shows?)/.test(normalized)) {
     return 'assert';
+  }
+  if (/(hover|mouseover|over)/.test(normalized)) {
+    return 'hover';
+  }
+  if (/(scroll|pan)/.test(normalized)) {
+    return 'scroll';
   }
   if (/(enter|type|fill|provide|input)/.test(normalized)) {
     return 'fill';
@@ -339,17 +388,17 @@ function buildCompiledStep(stepText: string, action: StepAction, match?: StepMat
   const hint = buildStepHint(stepText, action, match);
   let valueExpression: string | undefined;
 
-  if (action === 'fill') {
+  if (action === 'fill' || action === 'type') {
     const rawValue = extractPreferredValue(match, ['value', 'text']);
     if (!rawValue) {
-      throw new Error(`Fill step requires an explicit value: "${stepText}"`);
+      throw new Error(`${action === 'type' ? 'Type' : 'Fill'} step requires an explicit value: "${stepText}"`);
     }
     valueExpression = createValueExpression(rawValue);
   }
 
-  if (action === 'assert') {
-    const rawValue = extractPreferredValue(match, ['text', 'value']);
-    if (rawValue) {
+  if (action === 'assert' || action === 'waitVisible' || action === 'waitHidden') {
+    const rawValue = extractPreferredValue(match, ['text', 'value', 'element']);
+    if (rawValue && action === 'assert') {
       valueExpression = createValueExpression(rawValue);
     }
   }
@@ -369,13 +418,20 @@ function buildStepHint(stepText: string, action: StepAction, match?: StepMatch):
     textHint,
   };
 
-  if (action === 'click') {
-    hint.roleHint = 'button';
-    hint.typeHint = /submit/.test(stepText.toLowerCase()) ? 'submit' : 'button';
-  }
-
-  if (action === 'assert') {
-    hint.roleHint = 'heading';
+  switch (action) {
+    case 'click':
+      hint.roleHint = 'button';
+      hint.typeHint = /submit/.test(stepText.toLowerCase()) ? 'submit' : 'button';
+      break;
+    case 'fill':
+    case 'type':
+      hint.typeHint = 'textbox';
+      break;
+    case 'assert':
+    case 'waitVisible':
+    case 'waitHidden':
+      hint.roleHint = 'heading';
+      break;
   }
 
   return hint;
@@ -483,20 +539,41 @@ function renderStepLines(step: CompiledStep, index: number): string[] {
   const lines: string[] = [];
   lines.push(`    const { locator: ${locatorName} } = ${resolverCall};`);
 
-  if (step.action === 'click') {
-    lines.push(`    await ${locatorName}.click();`);
-  }
-
-  if (step.action === 'fill') {
-    lines.push(`    await ${locatorName}.fill(${step.valueExpression});`);
-  }
-
-  if (step.action === 'assert') {
-    if (step.valueExpression) {
-      lines.push(`    await expect(${locatorName}).toContainText(${step.valueExpression});`);
-    } else {
+  switch (step.action) {
+    case 'click':
+      lines.push(`    await ${locatorName}.click();`);
+      break;
+    case 'fill':
+      lines.push(`    await ${locatorName}.fill(${step.valueExpression});`);
+      break;
+    case 'type':
+      lines.push(`    await ${locatorName}.type(${step.valueExpression});`);
+      break;
+    case 'hover':
+      lines.push(`    await ${locatorName}.hover();`);
+      break;
+    case 'scroll':
+      lines.push(`    await ${locatorName}.scrollIntoViewIfNeeded();`);
+      break;
+    case 'assert':
+      if (step.valueExpression) {
+        lines.push(`    await expect(${locatorName}).toContainText(${step.valueExpression});`);
+      } else {
+        lines.push(`    await expect(${locatorName}).toBeVisible();`);
+      }
+      break;
+    case 'waitVisible':
       lines.push(`    await expect(${locatorName}).toBeVisible();`);
-    }
+      break;
+    case 'waitHidden':
+      lines.push(`    await expect(${locatorName}).toBeHidden();`);
+      break;
+    case 'assertDisabled':
+      lines.push(`    await expect(${locatorName}).toBeDisabled();`);
+      break;
+    case 'assertEnabled':
+      lines.push(`    await expect(${locatorName}).toBeEnabled();`);
+      break;
   }
 
   return lines;
