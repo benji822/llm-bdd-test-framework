@@ -1,233 +1,316 @@
-# Stagehand BDD Test Framework
+# LLM BDD Test Framework
 
-An automated testing framework that transforms plain-text QA specifications into executable Playwright BDD suites via Stagehand. Authoring runs interact with the app through natural language, while CI only consumes the deterministic outputs (`graph` → `feature` + `steps`).
+A deterministic end-to-end testing framework that transforms plain-text QA specifications into executable Playwright test suites. **No runtime authoring, no LLM in CI**—pure, fast, deterministic tests.
 
-## Table of Contents
-- [Features](#features)
-- [Quick Start](#quick-start)
-  - [Installation](#installation)
-  - [Configuration](#configuration)
-  - [Write Your First Spec](#write-your-first-spec)
-  - [Generate Tests](#generate-tests)
-- [Best Practices](#best-practices)
-- [Pipeline Overview](#pipeline-overview)
-- [Architecture & Design Principles](#architecture--design-principles)
-- [Directory Structure](#directory-structure)
-- [Test Data Management](#test-data-management)
-- [Selector Strategy](#selector-strategy)
-- [Environment Variables](#environment-variables)
-- [Workflow Commands](#workflow-commands)
-  - [Stagehand-first authoring](#stagehand-first-authoring)
-  - [Umbrella CLI helpers](#umbrella-cli-helpers)
-  - [Supporting commands](#supporting-commands)
-- [Test Execution](#test-execution)
-  - [Playwright Commands](#playwright-commands)
-  - [Test Lifecycle](#test-lifecycle)
-  - [Step Implementations](#step-implementations)
-  - [Controlled Vocabulary](#controlled-vocabulary)
-- [Writing New Tests](#writing-new-tests)
-- [CI/CD Integration](#cicd-integration)
-  - [GitHub Actions Example](#github-actions-example)
-- [Test Data Management](#test-data-management)
-- [Selector Strategy](#selector-strategy)
-- [Environment Variables](#environment-variables)
-- [Workflow Commands](#workflow-commands)
-  - [Single Spec Processing](#single-spec-processing)
-  - [Batch Processing](#batch-processing)
-  - [Validation & CI](#validation--ci)
-  - [Additional Commands](#additional-commands)
-- [Test Execution](#test-execution)
-  - [Playwright Commands](#playwright-commands)
-  - [Test Lifecycle](#test-lifecycle)
-  - [Step Implementations](#step-implementations)
-  - [Controlled Vocabulary](#controlled-vocabulary)
-- [Writing New Tests](#writing-new-tests)
-- [CI/CD Integration](#cicd-integration)
-  - [GitHub Actions Example](#github-actions-example)
-  - [CI Verification Process](#ci-verification-process)
-- [Troubleshooting](#troubleshooting)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [License](#license)
-- [Support](#support)
+## Architecture Overview
 
-## Features
+```
+Plain-text specs (.txt)
+    ↓
+Compile → parse specs, load pages.yaml, execute setup (via connectors.yaml)
+    ↓
+Generated Playwright tests (.spec.ts) + resolved aliases
+    ↓
+Verify → headless selector validation (role, label, text, type, name, placeholder, css, testid)
+    ↓
+Run → Playwright executes tests with stable selectors
+```
 
-- ⚙️ **Stagehand-first recordings**: Plain-text specs feed Stagehand, which records deterministic action graphs and emits compiled artifacts.
-- ✅ **Deterministic execution**: Playwright consumes committed graphs, features, steps, and selectors so CI never depends on live authoring.
-- 🔍 **Selector hygiene**: `collect-selectors`, `selector-drift`, and `validate-selectors` keep the registry aligned with the UI.
-- 🧪 **Validation guardrail**: `yarn bdd verify` enforces linting, vocabulary coverage, selector presence, and secret scanning before tests run.
-- 📦 **Artifact bundling**: CI packages graphs, selectors, features, and reports in `tests/artifacts/ci-bundle/` for auditing.
+## Quick Start (5 minutes)
 
-## Quick Start
-
-### Installation
+### 1. Install & Configure
 
 ```bash
 npm install
-# or
-yarn install
-```
-
-### Configuration
-
-Copy the example environment file and configure it for your workspace:
-
-```bash
 cp .env.example .env.local
+# Edit .env.local with your E2E_BASE_URL
 ```
 
-Edit `.env.local` with your settings:
+### 2. Create pages.yaml
 
-```env
-AUTHORING_MODE=true    # allow stagehand recording locally
-STAGEHAND_CACHE_DIR=tests/tmp/stagehand-cache
-MOCK_LOGIN_APP=false
+Maps page names to routes:
 
-E2E_BASE_URL=http://localhost:4200
-E2E_USER_EMAIL=qa.user@example.com
-E2E_USER_PASSWORD=SuperSecure123!
-E2E_INVALID_PASSWORD=WrongPassword!123
-E2E_UNKNOWN_EMAIL=unknown.user@example.com
+```yaml
+# pages.yaml
+login: /login
+dashboard: /dashboard
 ```
 
-### Write Your First Spec
+### 3. Create a spec
 
-Create a plain-text specification in `tests/qa-specs/`:
+```plaintext
+Feature: Simple login
 
-**tests/qa-specs/login.txt**
-
-```
-Feature: User login
-
-Users authenticate with email and password.
-
-Happy path:
-- User opens the login page.
-- User enters valid email and password.
-- User clicks submit button.
-- User sees welcome message.
-
-Invalid credentials:
-- User enters wrong password.
-- System shows error message.
+User logs in:
+- I am on the login page
+- I enter email as "user@example.com"
+- I enter password as "password123"
+- I click the login button
+- I should see text "Welcome"
 ```
 
-### Generate Tests
+### 4. Compile & run
 
 ```bash
-yarn bdd record tests/qa-specs/example-login.txt \
-  --scenario "Happy path" \
-  --graph-dir tests/artifacts/graph \
-  --feature-dir tests/features/compiled \
-  --steps-dir tests/steps/generated
+# Generate Playwright spec
+yarn llm compile specs/login.txt --pages pages.yaml --out-dir tests/e2e-gen
+
+# Verify selectors (optional, requires running server)
+yarn llm verify --base-url http://localhost:3000
+
+# Run tests
+yarn test
 ```
 
-`yarn bdd record` drives Stagehand through each step, stores the deterministic action graph under `tests/artifacts/graph`, and compiles the resulting `.feature`/`.steps.ts` artifacts under `tests/features/compiled` and `tests/steps/generated`. Use `--dry-run`, `--skip-compile`, or `--base-url` to shape the authoring iteration without having to rewrite previous artifacts.
+That's it. No recordings, no LLM calls during test execution, no flakiness.
 
-## Best Practices
+---
 
-- Keep specs narrow (one feature area, ~1 KB) so Stagehand can focus on deterministic interactions.
-- Author via `yarn bdd record` once per feature, keep the compiled `.feature` and `.steps.ts` artifacts under version control, and only re-run the recorder when behavior changes.
-- Refresh selectors via `yarn spec:collect-selectors` (or `yarn spec:selector-drift`) before relying on new graphs, so the registry stays accurate.
-- Validate compiled outputs locally with `yarn bdd verify` before pushing to CI; the same guards run under the `pretest` hook.
+## Table of Contents
 
-## Pipeline Overview
+- [Concepts](#concepts)
+- [File Structure](#file-structure)
+- [Workflow](#workflow)
+  - [Creating Specs](#creating-specs)
+  - [Setting Up Test Data](#setting-up-test-data)
+  - [Using Selectors](#using-selectors)
+  - [CI/CD Integration](#cicd-integration)
+- [Commands Reference](#commands-reference)
+- [Troubleshooting](#troubleshooting)
+- [Documentation](#documentation)
 
+---
+
+## Concepts
+
+### Plain-Text Specs
+
+Write tests as readable English:
+
+```plaintext
+Feature: Player claims reward
+
+Setup:
+- Create player with email "alice@example.com" as $player
+- Create reward with title "Golden Badge" as $reward
+
+Player claims reward:
+- I am on the dashboard page
+- I click the rewards button
+- I should see the reward with title "Golden Badge"
 ```
-Plain Text Spec ──────────► yarn bdd record ──────────► Stagehand action graph ──────────► compile (features + steps) ──────────► Playwright execution
+
+**Format rules:**
+- `Feature:` header (required)
+- `Setup:` block (optional, declares pre-test data)
+- Scenario names ending in `:` (required)
+- Steps prefixed with `-` (required)
+
+### pages.yaml
+
+Centralized route mapping:
+
+```yaml
+login: /login
+dashboard: /dashboard
+home: /
 ```
 
-All CLI commands live in `tests/scripts/`, so the same modules can be invoked manually or via scripting. See `tests/docs/architecture.md` for a deeper architecture walkthrough.
+All scenarios reference page names (e.g., "I am on the login page"), and the compiler resolves them from this config. **Never hardcode routes in specs.**
 
-## Architecture & Design Principles
+### Step Vocabulary
 
-1. **Stagehand First**: Plain-text specs are fed directly into Stagehand; LLM heuristics no longer participate in the CI path.
-2. **Graph Determinism**: Every run snapshots a Stagehand action graph (`tests/artifacts/graph/`), ensuring compilation produces the same `.feature` and `.steps.ts` files each time.
-3. **Selectors as First-Class Citizens**: Selector collection, drift detection, and validation work against `tests/artifacts/selectors/registry.json`, so Playwright can reuse stable locators.
-4. **Validation Gatekeepers**: Linting, coverage, selectors, and secret scans run via `yarn bdd verify`, so failures surface before Playwright executes.
+Steps must match approved patterns in `tests/artifacts/step-vocabulary.json`:
 
-| Stage | Module | CLI Entry Point | Responsibility | Key Dependencies |
-|-------|--------|-----------------|----------------|------------------|
-| Stagehand recording | `tests/scripts/stagehand/pipeline.ts` | `yarn bdd record` | Interpret plain-text specs with Stagehand, persist deterministic graphs, and trigger compilation. | `stagehand/wrapper`, Playwright cache helpers, `action-graph` compiler. |
-| Graph persistence | `tests/scripts/action-graph/persistence.ts` | (implicit) | Store versioned graphs under `tests/artifacts/graph` for repeatable test determinism. | `fs`, JSON utilities. |
-| Graph compilation | `tests/scripts/action-graph/compiler.ts` | `yarn bdd compile` | Convert action graphs into `.feature` and `.steps.ts` artifacts consumed by Playwright BDD. | `gherkin`, `playwright-bdd`, selector metadata. |
-| Selector hygiene | `tests/scripts/collect-selectors.ts` | `yarn spec:collect-selectors` | Scan live routes, refresh the selector registry, and cache locators for deterministic tests. | Playwright Chromium adapter, registry utilities. |
-| Drift validation | `tests/scripts/selector-drift.ts` | `yarn spec:selector-drift` | Compare fresh scans to the committed registry, report missing/updated selectors, and optionally patch the registry. | `collect-selectors`, structured logging. |
-| Validation | `tests/scripts/validate-selectors.ts`, `tests/scripts/validate-coverage.ts` | `yarn bdd verify` | Ensure graphs reference known selectors, features match approved vocabulary, and both deliverable types stay consistent. | `types/validation-report`, `utils/secret-scanner`. |
-| CI verification | `tests/scripts/ci-verify.ts` | `yarn bdd verify` | Aggregate lint, coverage, selector, and secret checks; package graphs, features, selectors, and reports for audits. | `gherkin-lint`, `scanFilesForSecrets`, artifact bundler. |
+```json
+{
+  "definitions": [
+    {
+      "pattern": "I am on the {page} page",
+      "domain": "navigation"
+    },
+    {
+      "pattern": "I click the {element} button",
+      "domain": "interaction"
+    },
+    {
+      "pattern": "I should see text {text}",
+      "domain": "assertion"
+    }
+  ]
+}
+```
 
-Shared utilities live under `tests/scripts/utils/`, and Zod schemas under `tests/scripts/types/` keep contracts explicit.
+Steps that don't match raise a compile error. Add new patterns here before using them in specs.
 
-## Directory Structure
+### Selector Resolution
+
+The runtime `selectorResolver` finds elements using multiple strategies in priority order:
+
+1. **Registry ID** — Direct lookup in `tests/artifacts/selectors/registry.json`
+2. **Role + text** — `getByRole('button', { name: /submit/i })`
+3. **Label** — `getByLabel('email')`
+4. **Text** — `getByText('Welcome')`
+5. **Type** — `input[type='submit']`
+6. **Name** — `input[name='username']`
+7. **Placeholder** — `input[placeholder='Enter email']`
+8. **CSS** — Fallback to explicit CSS selectors
+9. **Test ID** — `[data-testid='..']`
+
+**Best practice**: Ensure your app has semantic HTML (`role`, `aria-label`) and `data-testid` attributes on complex elements.
+
+### Setup DSL & Connectors
+
+Define test data in the `Setup:` block:
+
+```yaml
+Setup:
+- Create player with email "alice@example.com" as $player
+- Create reward with title "Achievement" as $reward
+- Assign reward to player
+```
+
+The compiler loads `connectors.yaml` to map these declarations to real HTTP/GraphQL/SQL actions, executes them before scenarios, and injects the results (e.g., `$player.id = 123`) into steps.
+
+**Idempotency**: Each action includes a unique key (SHA256 hash of resource + timestamp) so replay is safe—same spec can run multiple times without duplicating data.
+
+---
+
+## File Structure
 
 ```
 .
+├── README.md                 ← You are here
+├── pages.yaml                ← Page name → route mappings
+├── connectors.yaml           ← Setup action declarations (optional)
+├── specs/                    ← Your plain-text QA specs
+│   ├── login.txt
+│   └── player-rewards.txt
 ├── tests/
-│   ├── qa-specs/           # Human-authored plain-text specifications
 │   ├── artifacts/
-│   │   ├── graph/           # Stagehand action graphs (JSON)
-│   │   ├── selectors/       # Registry, drift reports, validation logs
-│   │   ├── ci-bundle/       # Packaged artifacts for CI
-│   │   ├── validation-report.json
-│   │   ├── ci-report.json
-│   │   └── step-vocabulary.json
-│   ├── features/           # Compiled Gherkin files (compiled/)
-│   ├── steps/              # Generated Playwright step definitions
-│   ├── scripts/            # Pipeline automation modules and CLI cores
-│   ├── config/             # Tooling configuration (e.g., `gherkinlint.json`)
-│   ├── schemas/            # Validation rule sets (e.g., action-graph schema)
-│   └── __tests__/          # Unit and integration coverage via `node:test`
-├── package.json
+│   │   ├── selectors/
+│   │   │   └── registry.json    ← Cached selector registry
+│   │   └── step-vocabulary.json ← Approved step patterns
+│   ├── e2e-gen/               ← Generated Playwright specs
+│   └── steps/
+│       └── support/
+│           └── selector-resolver.ts  ← Selector resolution engine
 ├── playwright.config.ts
-├── tsconfig.json
-└── tsconfig.cucumber.json
+└── tsconfig.json
 ```
 
-| Path | Purpose |
-|------|---------|
-| `tests/qa-specs/` | Plain-text feature descriptions that feed Stagehand. |
-| `tests/artifacts/graph/` | Deterministic action graphs captured during authoring. |
-| `tests/features/compiled/` | Compiled `.feature` files consumed by Playwright BDD. |
-| `tests/steps/generated/` | Step definitions produced from the graphs. |
-| `tests/artifacts/selectors/` | Selector registry, drift reports, validation output. |
-| `tests/scripts/` | CLI modules for Stagehand recording, selector utilities, validation, and CI. |
-| `tests/scripts/utils/` | Shared helpers for file ops, logging, and concurrency. |
-| `tests/scripts/types/` | Zod schemas and TypeScript typings for artifacts. |
-| `tests/config/` | Tooling config such as `gherkinlint.json`. |
-| `tests/schemas/` | Validation contracts for graphs, selectors, and reports. |
-| `tests/__tests__/` | Automated coverage for every pipeline slice. |
+---
 
-## Test Data Management
+## Workflow
 
-- Placeholders such as `<E2E_USER_EMAIL>` resolve to environment variables at runtime.
-- YAML `testData` blocks capture per-scenario inputs so Playwright steps can consume deterministic values.
+### Creating Specs
 
+**Step 1: Create the spec file**
+
+```plaintext
+# specs/login.txt
+
+Feature: User authentication
+
+Happy path:
+- I am on the login page
+- I enter email as "user@example.com"
+- I enter password as "mypassword"
+- I click the login button
+- I should see text "Dashboard"
+
+Invalid password:
+- I am on the login page
+- I enter email as "user@example.com"
+- I enter password as "wrong"
+- I click the login button
+- I should see text "Invalid credentials"
+```
+
+**Step 2: Compile**
+
+```bash
+yarn llm compile specs/login.txt \
+  --pages pages.yaml \
+  --base-url http://localhost:3000 \
+  --out-dir tests/e2e-gen
+```
+
+**Step 3: Run**
+
+```bash
+yarn test tests/e2e-gen/
+```
+
+### Setting Up Test Data
+
+Use the `Setup:` block to declare pre-test data, and `connectors.yaml` to define how to create it:
+
+**spec:**
 ```yaml
-scenarios:
-  - name: Authenticate With Valid Credentials
-    steps:
-      - type: when
-        text: I enter email as "<E2E_USER_EMAIL>"
-    testData:
-      E2E_USER_EMAIL: qa.user@example.com
+Feature: Player claims reward
+
+Setup:
+- Create player with email "alice@example.com" as $player
+- Create reward with title "Golden Badge" as $reward
+
+Player claims reward:
+- I am on the dashboard page
+- I click rewards
+- I should see the reward with title "Golden Badge"
 ```
 
-During execution the step implementation reads `process.env.E2E_USER_EMAIL`, ensuring secrets never leak into committed files.
+**connectors.yaml:**
+```yaml
+version: '1.0'
 
-## Selector Strategy
+endpoints:
+  api:
+    type: http
+    url: '${API_BASE_URL}/api'
 
-1. **Role + Accessible Name** (`priority: 1`)  
-   `<button role="button" aria-label="Submit order">Submit</button>` → `button-submit-order`
-2. **ARIA Label** (`priority: 2`)  
-   `<div aria-label="Discount applied">…</div>` → `discount-applied`
-3. **Data Test ID** (`priority: 3`)  
-   `<input data-testid="email-input" />` → `email-input`
-4. **Fallback CSS** (`priority: 4`) only when unavoidable.
+actions:
+  create_player:
+    resource: player
+    operation: create
+    endpoint: api
+    payload:
+      status: active
 
-The runtime `selectorResolver` also understands text/type-based heuristics. When a recorded step lacks a registry ID, it tries these strategies in the default order `role,label,text,type,name,placeholder,css,testid`. The `SELECTOR_STRATEGY` environment variable can override that order (e.g., `SELECTOR_STRATEGY=text` forces text-first resolution), and recorded hints such as the button text (`LOG IN`) or input type (`submit`) help it reach the right element even when no ARIA attributes are available.
+  create_reward:
+    resource: reward
+    operation: create
+    endpoint: api
+```
 
-Selector registry entries (`tests/artifacts/selectors/registry.json`) follow:
+**Compile with setup:**
+```bash
+export API_BASE_URL=http://localhost:3001
+yarn llm compile specs/player-rewards.txt \
+  --pages pages.yaml \
+  --connectors connectors.yaml \
+  --out-dir tests/e2e-gen
+```
+
+The compiler:
+1. Executes setup actions in order (mocked HTTP calls, or real if API endpoints are running)
+2. Builds aliases: `$player = { id: 123, email: "alice@example.com", ... }`
+3. Injects aliases into scenario steps: `"I should see player ID 123"`
+4. Generates Playwright spec with resolved values
+
+**Idempotency**: If the spec runs twice, setup actions generate the same idempotency key and return the same data without duplicating records.
+
+### Using Selectors
+
+**For simple cases**, let the resolver use text hints:
+
+```plaintext
+- I click the login button         # Finds <button>Login</button>
+- I click the submit button        # Finds <button type="submit">
+- I enter email as "user@..."      # Finds <input placeholder="email">
+```
+
+**For ambiguous cases**, register selectors in `tests/artifacts/selectors/registry.json`:
 
 ```json
 {
@@ -235,267 +318,63 @@ Selector registry entries (`tests/artifacts/selectors/registry.json`) follow:
     "id": "email-input",
     "type": "testid",
     "selector": "input[data-testid='email-input']",
-    "priority": 3,
-    "lastSeen": "2025-10-19T10:12:34Z",
-    "stability": "high",
-    "page": "/login",
-    "accessible": true
+    "priority": 1,
+    "page": "/login"
   }
 }
 ```
 
-`yarn spec:collect-selectors` refreshes the registry by crawling live routes with Playwright. Run `yarn spec:selector-drift --base-url <url>` to compare a fresh scan against the committed registry, emit `tests/artifacts/selectors/drift-report.json`, and optionally sync updates with `--apply`.
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `AUTHORING_MODE` | No | `true` | Enable authoring policies for Stagehand runs (CI should set or leave `false`). |
-| `STAGEHAND_CACHE_DIR` | No | `tests/tmp/stagehand-cache` | Directory used by Stagehand to persist cached plans and actions. |
-| `MOCK_LOGIN_APP` | No | `false` | When `true`, Playwright swaps in a mock login UI for rapid feedback loops. |
-| `OPENROUTER_API_KEY` | No | - | Optional API key for OpenRouter; set this locally to route Stagehand recording calls through OpenRouter (ignored in CI). |
-| `OPENROUTER_MODEL` | No | `gpt-4o-mini` | Model identifier sent to OpenRouter when the API key is present. |
-| `OPENROUTER_BASE_URL` | No | `https://openrouter.ai/api/v1/chat/completions` | Override the OpenRouter API endpoint (handy for proxies or testing). |
-| `E2E_BASE_URL` | Yes | - | Application endpoint used by Playwright, selectors, and Stagehand. |
-| `E2E_USER_EMAIL` | Yes | - | Default QA login email. |
-| `E2E_USER_PASSWORD` | Yes | - | Default QA login password. |
-| `E2E_INVALID_PASSWORD` | No | `WrongPassword!123` | Negative-case password used in failing scenarios. |
-| `E2E_UNKNOWN_EMAIL` | No | `unknown.user@example.com` | Placeholder email for unknown-account flows. |
-
-### OpenRouter authoring (optional)
-
-Set `OPENROUTER_API_KEY` (and optionally `OPENROUTER_MODEL`/`OPENROUTER_BASE_URL`) when you want Stagehand to send LLM requests through OpenRouter during local authoring runs. The key is only honored when `AUTHORING_MODE` permits authoring and CI-related flags (`CI`, `GITHUB_ACTIONS`, `BUILDKITE`) are absent, so automation jobs stay deterministic without needing OpenRouter credentials. Running with OpenRouter does incur token charges for whichever upstream model you pick, so tip the cache balance toward the Stagehand cache and refer to https://openrouter.ai/pricing for your current per-token cost estimates.
-
-## Workflow Commands
-
-### Stagehand-first authoring (recommended)
-
-```bash
-yarn bdd record <specPath> [--scenario <name>] [--graph-dir <dir>] [--feature-dir <dir>] [--steps-dir <dir>] [--base-url <url>] [--dry-run] [--skip-compile]
+Then reference in your step:
+```plaintext
+- I enter email as "user@example.com"  # Resolved via text + role hints
 ```
 
-This command parses the plain-text spec, lets Stagehand execute each step, stores the resulting action graph, and compiles deterministic features and step defs. Skip compilation (`--skip-compile`), run a dry run (`--dry-run`), or override the base URL as needed.
-
-### Umbrella CLI helpers
-
-```bash
-# Bootstrap the workspace
-yarn bdd init
-
-# Compile saved action graphs into deterministic artifacts
-yarn bdd compile tests/artifacts/graph/<spec>__scenario.json --feature-dir tests/features/compiled --steps-dir tests/steps/generated [--dry-run] [--no-metadata]
-
-# Run the Playwright suite using the current artifacts
-yarn bdd run [playwright args]
-
-# Validate the generated artifacts (mirrors yarn spec:ci-verify)
-yarn bdd verify [--normalized <dir>] [--features <dir>] [--selectors <path>] [--vocabulary <path>] [--report <path>] [--ci-report <path>] [--bundle <dir>] [--timeout <ms>]
-```
-
-`yarn bdd init` ensures the expected artifact directories (`tests/artifacts`, `tests/features/compiled`, `tests/steps/generated`, etc.) exist and bootstraps `.env.local` from `.env.example`. `yarn bdd compile` reuses the same compiler powering `yarn spec:compile-graph`, producing `.feature` and `.steps.ts` outputs from saved action graphs. `yarn bdd run` proxies to `yarn test`, forwarding any Playwright arguments you supply (for example `--headed` or `--grep`). `yarn bdd verify` wraps `yarn spec:ci-verify`, running the schema, lint, coverage, selector, and secret scans and accepting the same CLI flags. Run `yarn bdd help` to show this overview at any time.
-
-### Stagehand CLI Primer
-
-```bash
-# Bootstrap the deterministic workspace
-yarn bdd init
-
-# Record a plain-text spec with Stagehand and persist the graph
-yarn bdd record tests/qa-specs/example-login.txt --graph-dir tests/artifacts/graph --feature-dir tests/features/compiled --steps-dir tests/steps/generated
-
-# Recompile saved graphs into `.feature` + `.steps.ts` artifacts
-yarn bdd compile tests/artifacts/graph/<spec>__scenario.json --feature-dir tests/features/compiled --steps-dir tests/steps/generated
-
-# Run the Playwright suite with the latest artifacts
-yarn bdd run [playwright args]
-
-# Validate artifacts (lint, coverage, selectors, secrets)
-yarn bdd verify [--graph-dir <dir>] [--features <dir>] [--selectors <path>] [--vocabulary <path>] [--report <path>] [--ci-report <path>] [--bundle <dir>] [--timeout <ms>]
-```
-
-`yarn bdd verify` wraps the same validation stack that previously lived under `spec:ci-verify`; the command now works directly off compiled features and Stagehand graphs.
-
-### Supporting Commands
-
-```bash
-# Keep the selector registry up to date with the running app
-yarn spec:collect-selectors --route /login --route /dashboard
-
-# Detect selector drift and optionally sync the registry
-yarn spec:selector-drift --base-url https://app.example.com --route /login --route /dashboard
-
-# Run Playwright tests (used by `yarn bdd run`)-level automation
-yarn test
-yarn test:headed
-yarn test:ui
-yarn test:report
-```
-
-### Stagehand Recording Demo
-
-```bash
-# Record and compile the example login spec
-yarn bdd record tests/qa-specs/example-login.txt --scenario "Happy path" --graph-dir tests/artifacts/graph --feature-dir tests/features/compiled --steps-dir tests/steps/generated
-
-# Run Playwright against the recorded artifacts
-yarn bdd run --headed
-```
-
-Recording replays Stagehand step-by-step, compiles the resulting graphs, and stores the deterministic artifacts so Playwright can run without rerunning authoring layers. `MOCK_LOGIN_APP` can still toggle a lightweight HTML shim during Playwright execution.
-
-## Test Execution
-
-### Playwright Commands
-
-```bash
-# Run the entire suite headlessly
-yarn test
-
-# Run in headed mode
-yarn test:headed
-
-# Launch Playwright UI mode
-yarn test:ui
-
-# Show the latest HTML report
-yarn test:report
-```
-
-### Test Lifecycle
-
-1. **Setup**: Playwright reads `playwright.config.ts`, loads environment variables, and prepares test fixtures.
-2. **Generation**: `playwright-bdd` converts `.feature` files into executable tests under `tests/.features-gen/`.
-3. **Execution**: Each step resolves to its implementation, using selectors from the registry and environment-backed data.
-4. **Teardown**: Browser contexts close, and screenshots/videos/traces are collected for failures.
-
-### Step Implementations
-
-**Navigation** (`tests/steps/navigation.steps.ts`):
-
+Or use explicit registry ID (advanced):
 ```typescript
-import { createBdd } from 'playwright-bdd';
-
-const { Given, When } = createBdd();
-
-Given('I am on the {word} page', async ({ page }, slug: string) => {
-  const routes = {
-    login: '/login',
-    dashboard: '/dashboard',
-  };
-  await page.goto(routes[slug] ?? `/${slug}`);
+// In generated test code:
+const { locator } = await selectorResolver(page, 'email-input', {
+  textHint: 'email'
 });
 ```
 
-**Interaction** (`tests/steps/interaction.steps.ts`):
+### CI/CD Integration
 
-```typescript
-import { createBdd } from 'playwright-bdd';
-
-const { When } = createBdd();
-
-When('I enter {word} as {string}', async ({ page }, field: string, value: string) => {
-  const locator = page.locator(`[data-testid='${field}-input']`);
-  await locator.fill(value);
-});
-
-When(/^I click the (.+) button$/, async ({ page }, rawLabel: string) => {
-  await page.getByRole('button', { name: rawLabel }).click();
-});
-```
-
-**Assertions** (`tests/steps/assertion.steps.ts`):
-
-```typescript
-import { expect } from '@playwright/test';
-import { createBdd } from 'playwright-bdd';
-
-const { Then } = createBdd();
-
-Then('I should see text {string}', async ({ page }, text: string) => {
-  await expect(page.getByText(text)).toBeVisible();
-});
-
-Then('the URL should include {string}', async ({ page }, fragment: string) => {
-  await expect(page).toHaveURL(new RegExp(fragment));
-});
-```
-
-### Controlled Vocabulary
-
-All Gherkin steps must match patterns in `tests/artifacts/step-vocabulary.json`:
-
-```json
-{
-  "version": "1.0.0",
-  "definitions": [
-    {
-      "pattern": "I am on the {page} page",
-      "domain": "navigation",
-      "file": "tests/steps/navigation.steps.ts",
-      "parameters": [{ "name": "page", "type": "string" }],
-      "examples": ["I am on the login page"],
-      "version": "1.0.0"
-    }
-  ]
-}
-```
-
-Benefits:
-
-- Guarantees step implementations exist for every generated phrase.
-- Enables comprehensive coverage checks during `yarn spec:validate`.
-- Simplifies maintenance by centralizing approved wording.
-
-## Writing New Tests
-
-1. **Draft the Spec**: Add a plain-text feature under `tests/qa-specs/`.
-2. **Generate Clarifications**: `yarn spec:questions` prompts for missing details.
-3. **Answer Required Questions**: Edit the generated markdown to replace `_Pending answer_` entries.
-4. **Normalize**: `yarn spec:normalize` produces schema-validated YAML with selectors and test data.
-5. **Validate Selectors (Optional)**: `yarn spec:validate-and-fix` catches missing locators before feature generation.
-6. **Generate Features**: `yarn spec:features` outputs `.feature` files with 100% vocabulary coverage.
-7. **Execute**: `yarn test` runs the generated suite in Playwright.
-
-## CI/CD Integration
-
-### GitHub Actions Example
+**GitHub Actions Example:**
 
 ```yaml
-name: BDD Pipeline
+name: E2E Tests
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
+    branches: [main]
 
 jobs:
-  verify:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: yarn
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - run: yarn install --frozen-lockfile
+      - run: npx playwright install --with-deps
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+      - name: Compile specs
+        run: |
+          yarn llm compile specs/*.txt \
+            --pages pages.yaml \
+            --out-dir tests/e2e-gen
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
 
-      - name: Verify test artifacts
-        run: yarn spec:ci-verify
-
-      - name: Run Playwright tests
+      - name: Run tests
         run: yarn test
         env:
           E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
-          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
-          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
 
-      - name: Upload artifacts
+      - name: Upload report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
@@ -503,68 +382,190 @@ jobs:
           path: playwright-report/
 ```
 
-### CI Verification Process
+**Key principles:**
+- Specs are committed to git.
+- Generated `.spec.ts` files are **not** committed (they're ephemeral).
+- `connectors.yaml` is committed.
+- Environment variables (secrets) are set in the CI environment, not in files.
+- Compile step executes setup, generates tests, then Playwright runs them.
 
-`yarn bdd verify` performs:
+---
 
-1. **Gherkin linting** across compiled `.feature` files.
-2. **Vocabulary coverage** checks for every step recorded by Stagehand.
-3. **Selector validation** against `tests/artifacts/selectors/registry.json` and the stored action graphs.
-4. **Secret scanning** to prevent credential leaks.
-5. **Artifact packaging** under `tests/artifacts/ci-bundle/` for downstream audits.
+## Commands Reference
 
-Exit codes mirror the validation stages so CI can fail fast with actionable feedback:
+### Compile
 
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `3` | Gherkin lint failed |
-| `4` | Step coverage failed |
-| `5` | Selector validation failed |
-| `6` | Secret scan failed |
-| `7` | Verification timeout |
-| `9` | Unknown error |
+```bash
+yarn llm compile <spec> [options]
 
-CI validation strictly consumes committed graphs, selectors, and compiled artifacts—no authoring steps run during the verification job.
+Options:
+  --pages <path>          Path to pages.yaml (default: pages.yaml)
+  --connectors <path>     Path to connectors.yaml (optional)
+  --out-dir <dir>         Output directory (default: tests/e2e-gen)
+  --base-url <url>        Base URL for tests (default: http://localhost)
+  --vocabulary <path>     Path to step-vocabulary.json (default: tests/artifacts/step-vocabulary.json)
+  --scenario <name>       Compile only this scenario (optional)
+```
+
+**Example:**
+```bash
+yarn llm compile specs/login.txt \
+  --pages pages.yaml \
+  --base-url http://localhost:3000 \
+  --out-dir tests/e2e-gen
+```
+
+### Verify
+
+```bash
+yarn llm verify [options]
+
+Options:
+  --base-url <url>     Base URL for selector verification
+  --spec-dir <dir>     Generated spec directory (default: tests/e2e-gen)
+  --out-dir <dir>      Report output directory (default: tests/artifacts)
+```
+
+**Example:**
+```bash
+yarn llm verify --base-url http://localhost:3000 --spec-dir tests/e2e-gen
+```
+
+Outputs `tests/artifacts/verification-report.json` with pass/fail for each selector.
+
+### Test Execution
+
+```bash
+# Run all tests
+yarn test
+
+# Run in headed mode (see browser)
+yarn test:headed
+
+# Run UI mode (interactive)
+yarn test:ui
+
+# View report
+yarn test:report
+```
+
+---
 
 ## Troubleshooting
 
-### Graph Compilation Issues
+### Compile Fails with "Step pattern not in vocabulary"
 
-- Inspect the recorded Stagehand graphs if a scenario refuses to compile; confirm every step exposes deterministic selectors and actions.
-- Re-run `yarn bdd record` for a fresh graph once the UI behaviour stabilizes.
+**Cause**: Your spec uses a step that doesn't match `tests/artifacts/step-vocabulary.json`.
 
-### Selector Not Found in Registry
+**Fix**:
+1. Add the pattern to `tests/artifacts/step-vocabulary.json`:
+   ```json
+   {
+     "pattern": "I {action} the {element}",
+     "domain": "interaction"
+   }
+   ```
+2. Recompile: `yarn llm compile specs/...`
 
-1. Ensure the application is running at `E2E_BASE_URL`.
-2. Recollect selectors: `yarn spec:collect-selectors --route /login`.
-3. Verify the selector exists in `tests/artifacts/selectors/registry.json`.
-4. Add `data-testid` or ARIA attributes in the application if necessary.
+### Verification Fails: "No matching element for hint"
 
-### Step Pattern Not Covered by Vocabulary
+**Cause**: The selector resolver couldn't find the element with the given hints.
 
-- Check `tests/artifacts/step-vocabulary.json` for a matching pattern.
-- Update step implementations in `tests/steps/`.
-- Document changes in `tests/docs/step-vocabulary-guide.md`.
+**Fix**:
+1. Ensure your app is running at the `--base-url`.
+2. Check browser console for errors (may block element visibility).
+3. Add semantic HTML to your app:
+   - Use `role="button"`, `aria-label="..."`, or `data-testid="..."`
+4. Register the selector manually:
+   ```json
+   {
+     "login-button": {
+       "id": "login-button",
+       "type": "testid",
+       "selector": "button[data-testid='login-button']",
+       "page": "/login"
+     }
+   }
+   ```
 
-### CLI Fails with `E2E_BASE_URL env var or --base-url argument is required`
+### Generated Spec Not Running
 
-- Add the variable to `.env.local` or pass `--base-url` when running the command.
+**Cause**: Playwright config or environment variable missing.
+
+**Fix**:
+1. Check `E2E_BASE_URL` is set: `echo $E2E_BASE_URL`
+2. Verify `playwright.config.ts` references the generated directory:
+   ```typescript
+   export default defineConfig({
+     testDir: 'tests/e2e-gen',
+   });
+   ```
+3. Check generated spec has valid syntax:
+   ```bash
+   cat tests/e2e-gen/*.spec.ts | head -20
+   ```
+
+### Setup Actions Not Executing
+
+**Cause**: `connectors.yaml` not provided or setup actions don't match any connector action.
+
+**Fix**:
+1. Pass `--connectors connectors.yaml` to compile:
+   ```bash
+   yarn llm compile specs/... --connectors connectors.yaml
+   ```
+2. Verify resource + operation match in `connectors.yaml`:
+   ```yaml
+   # spec: "Create player..."
+   # connectors.yaml must have:
+   actions:
+     create_player:
+       resource: player
+       operation: create
+   ```
+3. Check environment variables are set:
+   ```bash
+   export API_BASE_URL=http://localhost:3001
+   yarn llm compile specs/... --connectors connectors.yaml
+   ```
+
+### Idempotency Key Collision
+
+**Cause**: Same setup action runs twice with slightly different timestamp.
+
+**Why it's OK**: The connector system uses a stable hash (first 16 chars of `SHA256(resource:timestamp)`), so replays within the same second are idempotent. If you run the spec after 1 second, a new record is created (as expected).
+
+**To reuse data**: Explicitly set the idempotency key in `connectors.yaml`:
+```yaml
+actions:
+  create_player:
+    resource: player
+    operation: create
+    endpoint: api
+    idempotencyKey: player_uuid  # Fixed key → always returns same record
+```
+
+---
 
 ## Documentation
 
-- `tests/docs/architecture.md` — Stage-by-stage architecture and execution flow.
-- `tests/docs/selector-best-practices.md` — Guidance for building resilient selectors and maintaining the registry.
-- `tests/docs/step-vocabulary-guide.md` — Evolving the approved Gherkin vocabulary and step implementations.
+- **[pages.yaml Guide](docs/pages-yaml.md)** — Understand page name mappings and routing.
+- **[connectors.yaml Guide](docs/setup-connectors-guide.md)** — Set up HTTP/GraphQL/SQL actions for test data.
+- **[Selector Strategy & Registry](docs/selector-strategy.md)** — Deep dive on selector resolution and best practices.
+- **[Step Vocabulary](docs/step-vocabulary.md)** — Approved patterns and how to extend them.
+- **[CI/CD Workflows](docs/ci-workflows.md)** — Real-world GitHub Actions and other CI examples.
+
+---
 
 ## Contributing
 
-1. Fork the repository.
-2. Create a feature branch.
-3. Add or update tests alongside your changes.
-4. Document pipeline updates in the relevant `tests/docs/` files.
-5. Commit generated artifacts (`tests/artifacts/graph/`, `tests/features/compiled/`, `tests/steps/generated/`, reports) to keep CI deterministic.
-6. Open a pull request.
+1. **Create a spec** under `specs/`.
+2. **Compile**: `yarn llm compile specs/... --pages pages.yaml --out-dir tests/e2e-gen`
+3. **Test locally**: `yarn test tests/e2e-gen/`
+4. **Commit**: Add spec + any changes to `connectors.yaml` or `pages.yaml`.
+5. **Do NOT commit** generated `tests/e2e-gen/` files (they're ephemeral).
+
+---
 
 ## License
 
@@ -572,7 +573,6 @@ MIT
 
 ## Support
 
-- Review this README and linked documentation.
-- Inspect the example assets in `tests/`.
-- Run `yarn spec:validate` for fast local diagnostics.
-- If issues persist, open a GitHub issue with logs and reproduction steps.
+- Review the Quick Start above.
+- Check [Troubleshooting](#troubleshooting) for common issues.
+- Open an issue on GitHub with spec + error logs.
